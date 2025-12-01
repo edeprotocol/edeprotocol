@@ -1,0 +1,175 @@
+{
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "https://ede-protocol.org/schemas/nil_intent_v2.schema.json",
+
+  "title": "NIL Intent v2",
+
+  "type": "object",
+
+  "required": [
+
+    "type",
+
+    "subject_neuro_did",
+
+    "session_id",
+
+    "timestamp",
+
+    "intent_type",
+
+    "agent_call",
+
+    "cognitive_load_estimate",
+
+    "risk_level",
+
+    "information_bits",
+
+    "duration_ms"
+
+  ],
+
+  "properties": {
+
+    "type": {
+
+      "type": "string",
+
+      "const": "NIL_INTENT_V2"
+
+    },
+
+    "subject_neuro_did": {
+
+      "type": "string"
+
+    },
+
+    "session_id": {
+
+      "type": "string"
+
+    },
+
+    "timestamp": {
+
+      "type": "string",
+
+      "format": "date-time"
+
+    },
+
+    "trace_id": {
+
+      "type": "string"
+
+    },
+
+    "intent_type": {
+
+      "type": "string",
+
+      "enum": ["COMMAND", "QUERY", "DELEGATION"]
+
+    },
+
+    "agent_call": {
+
+      "type": "object",
+
+      "required": ["protocol", "tool"],
+
+      "properties": {
+
+        "protocol": { "type": "string" },
+
+        "tool": { "type": "string" },
+
+        "arguments": {
+
+          "type": "object"
+
+        }
+
+      },
+
+      "additionalProperties": false
+
+    },
+
+    "cognitive_load_estimate": {
+
+      "type": "number",
+
+      "minimum": 0,
+
+      "maximum": 1
+
+    },
+
+    "risk_level": {
+
+      "type": "string",
+
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+
+    },
+
+    "information_bits": {
+
+      "type": "number",
+
+      "minimum": 0
+
+    },
+
+    "duration_ms": {
+
+      "type": "number",
+
+      "minimum": 0
+
+    },
+
+    "switching_count": {
+
+      "type": "integer",
+
+      "minimum": 0
+
+    },
+
+    "bandwidth_utilization": {
+
+      "type": "number",
+
+      "minimum": 0,
+
+      "maximum": 1
+
+    },
+
+    "context": {
+
+      "type": "object",
+
+      "properties": {
+
+        "emotional_valence": { "type": "string" },
+
+        "notes": { "type": "string" }
+
+      },
+
+      "additionalProperties": true
+
+    }
+
+  },
+
+  "additionalProperties": false
+
+}

@@ -1,0 +1,293 @@
+{
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "https://ede-protocol.org/schemas/csl_session_v2.schema.json",
+
+  "title": "Cognitive Session Ledger v2",
+
+  "type": "object",
+
+  "required": [
+
+    "session_id",
+
+    "subject_neuro_did",
+
+    "created_at",
+
+    "purpose",
+
+    "stats",
+
+    "cogni_cost",
+
+    "checkpoints",
+
+    "events",
+
+    "incident"
+
+  ],
+
+  "properties": {
+
+    "session_id": {
+
+      "type": "string"
+
+    },
+
+    "subject_neuro_did": {
+
+      "type": "string"
+
+    },
+
+    "created_at": {
+
+      "type": "string",
+
+      "format": "date-time"
+
+    },
+
+    "ended_at": {
+
+      "type": "string",
+
+      "format": "date-time"
+
+    },
+
+    "purpose": {
+
+      "type": "string"
+
+    },
+
+    "metadata": {
+
+      "type": "object",
+
+      "properties": {
+
+        "description": { "type": "string" },
+
+        "tags": {
+
+          "type": "array",
+
+          "items": { "type": "string" }
+
+        }
+
+      },
+
+      "additionalProperties": true
+
+    },
+
+    "stats": {
+
+      "type": "object",
+
+      "required": [
+
+        "total_intents",
+
+        "total_streams",
+
+        "average_cognitive_load",
+
+        "max_cognitive_load",
+
+        "average_risk_level",
+
+        "imagination_index"
+
+      ],
+
+      "properties": {
+
+        "total_intents": { "type": "integer", "minimum": 0 },
+
+        "total_streams": { "type": "integer", "minimum": 0 },
+
+        "average_cognitive_load": {
+
+          "type": "number",
+
+          "minimum": 0,
+
+          "maximum": 1
+
+        },
+
+        "max_cognitive_load": {
+
+          "type": "number",
+
+          "minimum": 0,
+
+          "maximum": 1
+
+        },
+
+        "average_risk_level": {
+
+          "type": "string",
+
+          "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+
+        },
+
+        "imagination_index": {
+
+          "type": "number",
+
+          "minimum": 0,
+
+          "maximum": 1
+
+        }
+
+      },
+
+      "additionalProperties": false
+
+    },
+
+    "cogni_cost": {
+
+      "type": "object",
+
+      "required": ["total_cost_units", "currency"],
+
+      "properties": {
+
+        "total_cost_units": { "type": "number", "minimum": 0 },
+
+        "currency": { "type": "string" }
+
+      },
+
+      "additionalProperties": false
+
+    },
+
+    "checkpoints": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "required": [
+
+          "checkpoint_id",
+
+          "timestamp",
+
+          "cognitive_state_hash",
+
+          "rollback_eligible",
+
+          "retention_days"
+
+        ],
+
+        "properties": {
+
+          "checkpoint_id": { "type": "string" },
+
+          "timestamp": { "type": "string", "format": "date-time" },
+
+          "cognitive_state_hash": { "type": "string" },
+
+          "rollback_eligible": { "type": "boolean" },
+
+          "retention_days": { "type": "integer", "minimum": 0 }
+
+        },
+
+        "additionalProperties": false
+
+      }
+
+    },
+
+    "events": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "required": ["event_type", "ref_id"],
+
+        "properties": {
+
+          "event_type": { "type": "string" },
+
+          "ref_id": { "type": "string" }
+
+        },
+
+        "additionalProperties": false
+
+      }
+
+    },
+
+    "incident": {
+
+      "type": "object",
+
+      "required": ["has_incident"],
+
+      "properties": {
+
+        "has_incident": { "type": "boolean" },
+
+        "incident_type": { "type": "string" },
+
+        "description": { "type": "string" },
+
+        "related_intent_ids": {
+
+          "type": "array",
+
+          "items": { "type": "string" }
+
+        },
+
+        "post_mortem": {
+
+          "type": "object",
+
+          "properties": {
+
+            "completed": { "type": "boolean" },
+
+            "report_uri": { "type": "string" }
+
+          },
+
+          "additionalProperties": false
+
+        }
+
+      },
+
+      "additionalProperties": false
+
+    }
+
+  },
+
+  "additionalProperties": false
+
+}
