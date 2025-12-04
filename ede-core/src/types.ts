@@ -1,54 +1,23 @@
-/**
- * EDE Core — Proof System Implementation
- * 
- * EDE is not a state machine.
- * EDE is not an event log.
- * EDE is a PROOF SYSTEM.
- * 
- * Every operation produces a proof.
- * Every proof is independently verifiable.
- * State is derived from proofs.
- * Invariants are theorems on proofs.
- */
-
-// =============================================================================
-// PRIMITIVES
-// =============================================================================
-
 export type SubstrateId = `did:ede:${string}`;
 export type ChannelId = `ch_${string}`;
 export type FluxId = `fx_${string}`;
+export type SessionId = `sess_${string}`;
 export type Hash = `0x${string}`;
-export type Timestamp = string; // ISO 8601
-
-export type CT = bigint; // 18 decimals, represents normalized(E, I, R)
-
-// =============================================================================
-// CRYPTO
-// =============================================================================
+export type Timestamp = string;
+export type CT = bigint;
 
 export type CryptoSuiteId =
-  // Post-Quantum (required for root-of-trust)
-  | "PQ_DILITHIUM_3"
-  | "PQ_DILITHIUM_5"
-  | "PQ_FALCON_512"
-  | "PQ_FALCON_1024"
-  | "PQ_SPHINCS_SHA2_256"
-  // Hybrid (transition)
+  | "PQ_DILITHIUM_3" | "PQ_DILITHIUM_5"
+  | "PQ_FALCON_512" | "PQ_FALCON_1024"
   | "HYBRID_ED25519_DILITHIUM_3"
-  | "HYBRID_ECDSA_FALCON_512"
-  // Classical (auxiliary only)
-  | "CLASSICAL_ED25519"
-  | "CLASSICAL_ECDSA_SECP256K1"
-  // Extension
-  | `CUSTOM_${string}`;
+  | "LEGACY_ED25519" | "LEGACY_ECDSA_SECP256K1";
 
-export type HashSuiteId = "SHA3_256" | "SHA3_512" | "BLAKE3" | "SHA256";
+export type HashSuiteId = "SHA3_256" | "SHA3_512" | "BLAKE3";
 
 export interface Signature {
   suite: CryptoSuiteId;
-  public_key: string; // base64
-  signature: string;  // base64
+  public_key: string;
+  signature: string;
   timestamp: Timestamp;
 }
 
@@ -56,16 +25,11 @@ export function is_pq_suite(suite: CryptoSuiteId): boolean {
   return suite.startsWith("PQ_") || suite.startsWith("HYBRID_");
 }
 
-// =============================================================================
-// EVIDENCE
-// =============================================================================
-
 export type Evidence =
   | SignatureEvidence
   | HashChainEvidence
   | InclusionEvidence
-  | BioBindingEvidence
-  | OracleEvidence;
+  | BioBindingEvidence;
 
 export interface SignatureEvidence {
   type: "SIGNATURE";
@@ -94,14 +58,7 @@ export interface BioBindingEvidence {
   substrate: SubstrateId;
   nal_proof: NalProof;
   time_window: [Timestamp, Timestamp];
-  io_correlation: number; // 0-1
-}
-
-export interface OracleEvidence {
-  type: "ORACLE";
-  oracle_id: string;
-  attestation: string; // base64
-  timestamp: Timestamp;
+  io_correlation: number;
 }
 
 export interface NalProof {
@@ -111,39 +68,28 @@ export interface NalProof {
   conduction_velocity_ms: number;
 }
 
-// =============================================================================
-// PROOF
-// =============================================================================
+export interface VerificationResult {
+  valid: boolean;
+  reason?: string;
+}
 
 export interface Proof<T> {
   claim: T;
   evidence: Evidence[];
+  created_at: Timestamp;
   verify(): VerificationResult;
 }
 
-export type VerificationResult =
-  | { valid: true }
-  | { valid: false; reason: string };
-
-// =============================================================================
-// SUBSTRATE
-// =============================================================================
-
-// SubstrateClass defines the entity type:
-// - "H"      = baseline human
-// - "H_PLUS" = augmented human (BCI, neural interface)
-// - "SO"     = synthetic operator (agent, swarm)
-// - "SSI"    = supra-system (envelope representing clusters of H+ and/or SO
-//              as a single economic entity). Reserved for v8+; experimental in v5.
-//              Core invariants are defined on H / H+ / SO.
 export type SubstrateClass = "H" | "H_PLUS" | "SO" | "SSI";
+export type ParticipantRole = "REQUESTOR" | "OPERATOR" | "SO_NODE" | "SSI_CLUSTER" | "OBSERVER";
+export type ChannelState = "OPEN" | "SETTLING" | "CLOSED";
 
 export interface IoProfile {
   max_bps: number;
   latency_ms: number;
-  jitter_ms?: number;
-  noise_entropy?: number;
-  neural_coupling?: number; // 0-1, only for H+
+  neural_coupling?: number;
+  brain_temporal_alignment_r?: number;
+  max_context_tokens?: number;
 }
 
 export interface StabilityProfile {
@@ -161,19 +107,13 @@ export interface SubstrateCrypto {
 export interface Substrate {
   id: SubstrateId;
   class: SubstrateClass;
+  label?: string;
   io: IoProfile;
   stability: StabilityProfile;
   crypto: SubstrateCrypto;
   ct_balance: CT;
   registered_at: Timestamp;
-  ttl?: Timestamp;
 }
-
-// =============================================================================
-// CHANNEL
-// =============================================================================
-
-export type ChannelState = "OPEN" | "SETTLING" | "CLOSED";
 
 export interface Channel {
   id: ChannelId;
@@ -185,57 +125,45 @@ export interface Channel {
   expires: Timestamp;
   state: ChannelState;
   nal_required: boolean;
-  pocw_required: boolean;
   crypto_suite: CryptoSuiteId;
   authorized_at: Timestamp;
-}
-
-// =============================================================================
-// FLUX
-// =============================================================================
-
-export interface ObservedMetrics {
-  actual_bps: number;
-  error_rate: number;
-  energy_joules: number;
 }
 
 export interface Flux {
   id: FluxId;
   channel: ChannelId;
+  session_id?: SessionId;
   from: SubstrateId;
   to: SubstrateId;
   ct_delta: CT;
-  observed: ObservedMetrics;
+  is_critical?: boolean;
+  observed: { actual_bps: number; error_rate: number; energy_joules: number };
   timestamp: Timestamp;
-}
-
-// =============================================================================
-// SETTLEMENT
-// =============================================================================
-
-export interface Distribution {
-  substrate: SubstrateId;
-  ct_amount: CT;
 }
 
 export interface Settlement {
   channel: ChannelId;
   total_fluxed: CT;
   fees: CT;
-  distributions: Distribution[];
+  distributions: { substrate: SubstrateId; ct_amount: CT }[];
   settled_at: Timestamp;
 }
 
-// =============================================================================
-// CSL EVENT TYPES
-// =============================================================================
+export interface SessionParticipant {
+  entity_id: SubstrateId;
+  class: SubstrateClass;
+  role: ParticipantRole;
+  initial_ct_balance?: CT;
+}
 
-export type CslEventType =
-  | "SUBSTRATE_REGISTERED"
-  | "CHANNEL_AUTHORIZED"
-  | "FLUX"
-  | "CHANNEL_SETTLED";
+export interface Session {
+  id: SessionId;
+  domain?: string;
+  participants: SessionParticipant[];
+  created_at: Timestamp;
+}
+
+export type CslEventType = "SUBSTRATE_REGISTERED" | "CHANNEL_AUTHORIZED" | "SESSION_CREATED" | "FLUX" | "CHANNEL_SETTLED";
 
 export interface CslEvent<T extends CslEventType, P> {
   id: Hash;
@@ -244,22 +172,51 @@ export interface CslEvent<T extends CslEventType, P> {
   proof: Proof<P>;
 }
 
-export type SubstrateRegisteredEvent = CslEvent<"SUBSTRATE_REGISTERED", Substrate>;
-export type ChannelAuthorizedEvent = CslEvent<"CHANNEL_AUTHORIZED", Channel>;
-export type FluxEvent = CslEvent<"FLUX", Flux>;
-export type ChannelSettledEvent = CslEvent<"CHANNEL_SETTLED", Settlement>;
-
 export type AnyCslEvent =
-  | SubstrateRegisteredEvent
-  | ChannelAuthorizedEvent
-  | FluxEvent
-  | ChannelSettledEvent;
-
-// =============================================================================
-// CSL (Cognitive Session Ledger)
-// =============================================================================
+  | CslEvent<"SUBSTRATE_REGISTERED", Substrate>
+  | CslEvent<"CHANNEL_AUTHORIZED", Channel>
+  | CslEvent<"SESSION_CREATED", Session>
+  | CslEvent<"FLUX", Flux>
+  | CslEvent<"CHANNEL_SETTLED", Settlement>;
 
 export interface Csl {
   events: AnyCslEvent[];
-  head: Hash; // hash of latest event
+  head: Hash;
 }
+
+export interface VerifyContext {
+  ct_critical_threshold: CT;
+  allow_legacy_crypto: boolean;
+}
+
+export interface InvariantViolation {
+  code: string;
+  message: string;
+  session_id?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface InvariantResult {
+  name: string;
+  ok: boolean;
+  violations: InvariantViolation[];
+}
+
+export interface InvariantSuiteResult {
+  CT_CONSERVATION: InvariantResult;
+  BILATERAL_ATTESTATION: InvariantResult;
+  APPEND_ONLY: InvariantResult;
+  SUBSTRATE_SOVEREIGNTY: InvariantResult;
+  PQ_COMPLIANCE: InvariantResult;
+  TOPOLOGY_NEUTRALITY: InvariantResult;
+  H_GUARD_CRITICAL_CT: InvariantResult;
+  all_ok: boolean;
+}
+
+export function isFluxEvent(e: AnyCslEvent): e is CslEvent<"FLUX", Flux> { return e.type === "FLUX"; }
+export function isSessionEvent(e: AnyCslEvent): e is CslEvent<"SESSION_CREATED", Session> { return e.type === "SESSION_CREATED"; }
+export function isSubstrateEvent(e: AnyCslEvent): e is CslEvent<"SUBSTRATE_REGISTERED", Substrate> { return e.type === "SUBSTRATE_REGISTERED"; }
+export function isChannelEvent(e: AnyCslEvent): e is CslEvent<"CHANNEL_AUTHORIZED", Channel> { return e.type === "CHANNEL_AUTHORIZED"; }
+export function isSettlementEvent(e: AnyCslEvent): e is CslEvent<"CHANNEL_SETTLED", Settlement> { return e.type === "CHANNEL_SETTLED"; }
+export function isHumanClass(cls: SubstrateClass): boolean { return cls === "H" || cls === "H_PLUS"; }
+export function isGuardRole(role: ParticipantRole): boolean { return role === "REQUESTOR" || role === "OPERATOR"; }

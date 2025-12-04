@@ -1,12 +1,20 @@
 {
-  "name": "ede-core",
-  "version": "0.5.0",
-  "description": "EDE Protocol Core - Proof System Implementation",
+  "name": "@edeprotocol/ede-core",
+  "version": "5.0.0",
+  "description": "EDE Protocol Core - Proof System with 7 Invariants",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
-    "test": "ts-node tests/invariants.test.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint src/**/*.ts",
     "clean": "rm -rf dist"
   },
@@ -16,14 +24,15 @@
     "proof-system",
     "cognitive-economy",
     "identity",
-    "settlement"
+    "settlement",
+    "post-quantum"
   ],
   "author": "EDE Protocol Contributors",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0",
-    "ts-node": "^10.9.0"
+    "vitest": "^1.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
