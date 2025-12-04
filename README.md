@@ -150,28 +150,22 @@ Append-only proof log. Every operation produces a verifiable proof.
 
 ```
 edeprotocol/
-├── docs/
-│   ├── EDE_v5_overview.md        # Full protocol specification
-│   ├── NIR_spec.md               # Identity registry details
-│   ├── NIL_spec.md               # Intent language grammar
-│   └── quantum_resilience.md     # Post-quantum architecture
-├── schemas/
-│   ├── nir_v2.schema.json        # NIR entity schema
-│   ├── nil_intent_v2.schema.json # Intent packet schema
-│   ├── nil_stream_v1.schema.json # Streaming intent schema
-│   ├── csl_event_v2.schema.json  # CSL event schema
-│   └── ct_flow_v1.schema.json    # CT flow schema
-├── ede-core/
-│   ├── src/                      # Reference implementation
-│   ├── tests/                    # Invariant tests
-│   └── README.md                 # Implementation guide
-├── examples/
-│   ├── h_plus_operator_session.json
-│   ├── agent_swarm_coordination.json
-│   └── bilateral_settlement.json
-├── LICENSE                       # Apache-2.0
+├── README.md
 ├── ROADMAP.md
-└── CONTRIBUTING.md
+├── CONTRIBUTING.md
+├── docs/
+│   ├── ede-core.md
+│   └── use_cases_2040.md
+├── schemas/          # JSON schemas (NIR, NIL, CSL, CT)
+├── ede-core/         # L0/L1 normative implementation
+│   ├── src/
+│   │   ├── types.ts
+│   │   ├── crypto.ts
+│   │   ├── operations.ts
+│   │   ├── verify.ts
+│   │   └── bridge/json.ts
+│   └── tests/
+└── ede-labs/         # L2 experimental (NOT normative)
 ```
 
 ---
