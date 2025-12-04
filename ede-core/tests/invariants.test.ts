@@ -33,7 +33,7 @@ describe('EDE Core Invariants', () => {
     const stl = settle_ct({ channel: ch.claim.id, total_fluxed: 500n, fees: 25n, distributions: [{ substrate: so.claim.id, ct_amount: 450n }, { substrate: h_plus.claim.id, ct_amount: 25n }], from_signature: pq_sig({}, "h_plus"), to_signature: pq_sig({}, "so"), channel_inclusion: ch_merkle }, csl.head);
     csl = append_to_csl(csl, create_settlement_event(stl, csl.head));
 
-    const ctx: VerifyContext = { ct_critical_threshold: 100n, allow_legacy_crypto: false };
+    const ctx: VerifyContext = { ctCriticalThreshold: 100n, allowLegacyCrypto: false };
     const r = verify_all_invariants(csl, ctx);
     expect(r.CT_CONSERVATION.ok).toBe(true);
     expect(r.BILATERAL_ATTESTATION.ok).toBe(true);
@@ -63,7 +63,7 @@ describe('EDE Core Invariants', () => {
     const ch_merkle = generate_merkle_proof([hash(ch.claim) as Hash], 0);
     const fx = flow({ channel: ch.claim.id, session_id: sess.claim.id, from: so1.claim.id, to: so2.claim.id, ct_delta: 500n, is_critical: true, observed: { actual_bps: 1e6, error_rate: 0, energy_joules: 1 }, from_signature: pq_sig({}, "so1"), to_signature: pq_sig({}, "so2"), channel_inclusion: ch_merkle }, csl.head);
     csl = append_to_csl(csl, create_flux_event(fx, csl.head));
-    const ctx: VerifyContext = { ct_critical_threshold: 100n, allow_legacy_crypto: false };
+    const ctx: VerifyContext = { ctCriticalThreshold: 100n, allowLegacyCrypto: false };
     const r = verify_all_invariants(csl, ctx);
     expect(r.H_GUARD_CRITICAL_CT.ok).toBe(false);
     expect(r.H_GUARD_CRITICAL_CT.violations[0].code).toBe('H_GUARD_MISSING');

@@ -18,7 +18,8 @@ export interface RegisterSubstrateParams {
 
 export function register_substrate(params: RegisterSubstrateParams, prev_hash: Hash): Proof<Substrate> {
   const ts = now();
-  const id = `did:ede:${hash(params.crypto.public_keys).slice(2, 18)}` as SubstrateId;
+  const idSeed = { keys: params.crypto.public_keys, suite: params.crypto.primary_suite, ts };
+  const id = `did:ede:${generate_id(JSON.stringify(idSeed))}` as SubstrateId;
 
   const substrate: Substrate = {
     id, class: params.class, label: params.label, io: params.io, stability: params.stability,
@@ -187,7 +188,9 @@ export function create_empty_csl(): Csl {
 export function append_to_csl(csl: Csl, event: AnyCslEvent): Csl {
   const result = event.proof.verify();
   if (!result.valid) throw new Error(`Invalid proof: ${result.reason}`);
-  return { events: [...csl.events, event], head: event.id };
+  const hc = event.proof.evidence.find(e => e.type === "HASH_CHAIN") as HashChainEvidence | undefined;
+  const newHead = hc ? hc.current : event.id;
+  return { events: [...csl.events, event], head: newHead };
 }
 
 export function create_substrate_event(proof: Proof<Substrate>, prev: Hash): AnyCslEvent {

@@ -185,8 +185,9 @@ export interface Csl {
 }
 
 export interface VerifyContext {
-  ct_critical_threshold: CT;
-  allow_legacy_crypto: boolean;
+  ctCriticalThreshold: CT;
+  allowLegacyCrypto: boolean;
+  substratesById?: Map<SubstrateId, Substrate>;
 }
 
 export interface InvariantViolation {

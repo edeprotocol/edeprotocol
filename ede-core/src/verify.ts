@@ -116,7 +116,7 @@ export function verify_h_guard(csl: Csl, ctx: VerifyContext): InvariantResult {
 
   for (const [session_id, session] of sessions) {
     const fluxes = fluxesBySession.get(session_id) || [];
-    const hasCritical = fluxes.some(f => f.is_critical === true || f.ct_delta >= ctx.ct_critical_threshold);
+    const hasCritical = fluxes.some(f => f.is_critical === true || f.ct_delta >= ctx.ctCriticalThreshold);
     if (!hasCritical) continue;
 
     const hasHumanGuard = session.participants.some(p => isHumanClass(p.class) && isGuardRole(p.role));
