@@ -1,345 +1,126 @@
 {
-
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-
-  "$id": "https://ede-protocol.org/schemas/nir_v2.schema.json",
-
-  "title": "Neural Identity Registry v2",
-
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.edeprotocol.org/nir_v2.schema.json",
+  "title": "Neural Identity Registry – Entity v2",
   "type": "object",
-
   "required": [
-
-    "neuro_did",
-
-    "entity_type",
-
-    "cognitive_profile",
-
-    "liveness_protocol",
-
-    "augmentation_profile",
-
-    "compliance_flags"
-
+    "version",
+    "substrate_id",
+    "class",
+    "crypto",
+    "io_profile"
   ],
-
   "properties": {
-
-    "neuro_did": {
-
+    "version": {
       "type": "string",
-
-      "pattern": "^did:neuro:[a-zA-Z0-9_-]+:[a-zA-Z0-9._:-]+$"
-
+      "const": "2.0"
     },
-
-    "entity_type": {
-
+    "substrate_id": {
       "type": "string",
-
-      "enum": ["H", "H_PLUS", "AGENT"]
-
+      "pattern": "^did:ede:[a-zA-Z0-9:_-]+$",
+      "description": "Global DID for H / H+ / SO / SSI."
     },
-
-    "cognitive_profile": {
-
+    "class": {
+      "type": "string",
+      "enum": ["H", "H_PLUS", "SO", "SSI"],
+      "description": "H (human), H_PLUS (augmented), SO (synthetic operator), SSI (supra-system envelope)."
+    },
+    "label": {
+      "type": "string",
+      "description": "Human-readable label or handle."
+    },
+    "crypto": {
       "type": "object",
-
-      "required": ["bandwidth_class", "certified_bandwidth_bps", "cost_coefficients"],
-
+      "required": ["primary_suite", "public_key"],
       "properties": {
-
-        "bandwidth_class": {
-
+        "primary_suite": {
           "type": "string",
-
-          "enum": ["BASELINE", "H_PLUS_TIER1", "H_PLUS_TIER2", "AGENT"]
-
+          "enum": [
+            "PQ_DILITHIUM_3",
+            "PQ_FALCON_1",
+            "PQ_KYBER_768",
+            "LEGACY_ED25519"
+          ]
         },
-
-        "certified_bandwidth_bps": {
-
+        "public_key": {
+          "type": "string"
+        },
+        "secondary_suites": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "io_profile": {
+      "type": "object",
+      "required": ["neural_coupling", "max_bps", "latency_ms"],
+      "properties": {
+        "neural_coupling": {
           "type": "number",
-
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "max_bps": {
+          "type": "integer",
           "minimum": 0
-
         },
-
-        "cost_coefficients": {
-
-          "type": "object",
-
-          "required": [
-
-            "alpha_information",
-
-            "beta_time",
-
-            "gamma_load",
-
-            "delta_criticality",
-
-            "epsilon_bandwidth",
-
-            "zeta_fatigue"
-
-          ],
-
-          "properties": {
-
-            "alpha_information": { "type": "number" },
-
-            "beta_time": { "type": "number" },
-
-            "gamma_load": { "type": "number" },
-
-            "delta_criticality": { "type": "number" },
-
-            "epsilon_bandwidth": { "type": "number" },
-
-            "zeta_fatigue": { "type": "number" }
-
-          },
-
-          "additionalProperties": false
-
-        }
-
-      },
-
-      "additionalProperties": false
-
-    },
-
-    "liveness_protocol": {
-
-      "type": "object",
-
-      "required": [
-
-        "challenge_type",
-
-        "expected_latency_ms_range",
-
-        "entropy_threshold"
-
-      ],
-
-      "properties": {
-
-        "challenge_type": {
-
-          "type": "string",
-
-          "enum": ["VISUAL_EVOKED", "AUDITORY_P300", "MOTOR_IMAGERY"]
-
-        },
-
-        "expected_latency_ms_range": {
-
-          "type": "array",
-
-          "items": { "type": "number" },
-
-          "minItems": 2,
-
-          "maxItems": 2
-
-        },
-
-        "entropy_threshold": {
-
+        "latency_ms": {
           "type": "number",
+          "minimum": 0
+        },
+        "substrate": {
+          "type": "string",
+          "enum": [
+            "BCI_INVASIVE",
+            "BCI_ENDOVASCULAR",
+            "BCI_WEARABLE",
+            "EMG",
+            "BEHAVIORAL",
+            "SILICON",
+            "QUANTUM",
+            "PHOTONIC"
+          ]
+        },
+        "bandwidth_tier": {
+          "type": "string",
+          "enum": ["TIER_0", "TIER_1", "TIER_2", "TIER_3"]
+        },
 
+        "brain_temporal_alignment_r": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Optional: empirical temporal alignment with human brain dynamics (e.g. MEG-based r)."
+        },
+        "brain_alignment_reference": {
+          "type": "string",
+          "description": "Optional: reference for the neuro-alignment protocol (e.g. 'Raugel2025_MEGauditory')."
+        },
+        "max_context_tokens": {
+          "type": "integer",
           "minimum": 0,
-
-          "maximum": 1
-
+          "description": "Maximum context window (tokens) supported by this substrate."
         }
-
       },
-
       "additionalProperties": false
-
     },
-
-    "augmentation_profile": {
-
-      "type": "object",
-
-      "required": ["status", "devices"],
-
-      "properties": {
-
-        "status": {
-
-          "type": "string",
-
-          "enum": ["NONE", "TRANSIENT", "PERSISTENT"]
-
-        },
-
-        "devices": {
-
-          "type": "array",
-
-          "items": {
-
-            "type": "object",
-
-            "required": ["device_type", "vendor", "model"],
-
-            "properties": {
-
-              "device_type": {
-
-                "type": "string",
-
-                "enum": ["NON_INVASIVE_BCI", "INVASIVE_BCI", "EMG", "WEARABLE"]
-
-              },
-
-              "vendor": { "type": "string" },
-
-              "model": { "type": "string" },
-
-              "bandwidth_bps": { "type": "number", "minimum": 0 },
-
-              "channels": { "type": "integer", "minimum": 1 }
-
-            },
-
-            "additionalProperties": false
-
-          }
-
-        },
-
-        "agent_companions": {
-
-          "type": "array",
-
-          "items": {
-
-            "type": "object",
-
-            "required": ["agent_did"],
-
-            "properties": {
-
-              "agent_did": { "type": "string" },
-
-              "capabilities": {
-
-                "type": "array",
-
-                "items": { "type": "string" }
-
-              }
-
-            },
-
-            "additionalProperties": false
-
-          }
-
-        }
-
-      },
-
-      "additionalProperties": false
-
+    "jurisdiction": {
+      "type": "string",
+      "description": "ISO 3166-1 alpha-2, e.g. FR, US, AE."
     },
-
-    "linked_wallets": {
-
-      "type": "array",
-
-      "items": {
-
-        "type": "object",
-
-        "required": ["type", "address"],
-
-        "properties": {
-
-          "type": { "type": "string" },
-
-          "address": { "type": "string" },
-
-          "label": { "type": "string" }
-
-        },
-
-        "additionalProperties": false
-
-      }
-
+    "regime": {
+      "type": "string",
+      "enum": ["REGULATED", "EXPERIMENTAL", "SANDBOX"]
     },
-
-    "compliance_flags": {
-
-      "type": "object",
-
-      "required": ["neurorights_respected", "consent_status", "jurisdiction"],
-
-      "properties": {
-
-        "neurorights_respected": { "type": "boolean" },
-
-        "consent_status": {
-
-          "type": "string",
-
-          "enum": ["ACTIVE", "REVOKED", "UNKNOWN"]
-
-        },
-
-        "jurisdiction": { "type": "string" },
-
-        "data_minimization": { "type": "boolean" }
-
-      },
-
-      "additionalProperties": false
-
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
     },
-
-    "delegation_chain": {
-
-      "type": "array",
-
-      "items": {
-
-        "type": "object",
-
-        "required": ["delegate_did", "scope"],
-
-        "properties": {
-
-          "delegate_did": { "type": "string" },
-
-          "scope": {
-
-            "type": "array",
-
-            "items": { "type": "string" }
-
-          },
-
-          "expiry": { "type": "string", "format": "date-time" }
-
-        },
-
-        "additionalProperties": false
-
-      }
-
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
     }
-
   },
-
   "additionalProperties": false
-
 }
