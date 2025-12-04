@@ -1,175 +1,110 @@
 {
-
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-
-  "$id": "https://ede-protocol.org/schemas/nil_intent_v2.schema.json",
-
-  "title": "NIL Intent v2",
-
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.edeprotocol.org/nil_intent_v2.schema.json",
+  "title": "Neuro-Intent Language – Intent v2",
   "type": "object",
-
   "required": [
-
-    "type",
-
-    "subject_neuro_did",
-
-    "session_id",
-
-    "timestamp",
-
-    "intent_type",
-
-    "agent_call",
-
-    "cognitive_load_estimate",
-
-    "risk_level",
-
-    "information_bits",
-
-    "duration_ms"
-
+    "version",
+    "intent_id",
+    "source",
+    "opcode",
+    "payload",
+    "signature"
   ],
-
   "properties": {
-
-    "type": {
-
+    "version": {
       "type": "string",
-
-      "const": "NIL_INTENT_V2"
-
+      "const": "2.0"
     },
-
-    "subject_neuro_did": {
-
-      "type": "string"
-
-    },
-
-    "session_id": {
-
-      "type": "string"
-
-    },
-
-    "timestamp": {
-
+    "intent_id": {
       "type": "string",
-
-      "format": "date-time"
-
+      "pattern": "^int_[a-zA-Z0-9]+$"
     },
-
-    "trace_id": {
-
-      "type": "string"
-
-    },
-
-    "intent_type": {
-
+    "source": {
       "type": "string",
-
-      "enum": ["COMMAND", "QUERY", "DELEGATION"]
-
+      "pattern": "^did:ede:[a-zA-Z0-9:_-]+$"
     },
-
-    "agent_call": {
-
+    "source_class": {
+      "type": "string",
+      "enum": ["H", "H_PLUS", "SO", "SSI"],
+      "description": "Optional hint: class of the source in NIR."
+    },
+    "target": {
+      "type": "string",
+      "pattern": "^did:ede:[a-zA-Z0-9:_-]+$"
+    },
+    "target_class": {
+      "type": "string",
+      "enum": ["H", "H_PLUS", "SO", "SSI"]
+    },
+    "opcode": {
+      "type": "string",
+      "enum": [
+        "APPROVE",
+        "REJECT",
+        "DELEGATE_TASK",
+        "SPAWN_SO",
+        "MERGE_INTO_SSI",
+        "ADJUST_RISK",
+        "REQUEST_FUSION",
+        "TERMINATE_SESSION"
+      ]
+    },
+    "payload": {
       "type": "object",
-
-      "required": ["protocol", "tool"],
-
+      "description": "Opcode-specific payload. Machine-parseable only.",
       "properties": {
-
-        "protocol": { "type": "string" },
-
-        "tool": { "type": "string" },
-
-        "arguments": {
-
-          "type": "object"
-
+        "task_type": { "type": "string" },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "ct_budget": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Max CT the source is willing to spend."
+        },
+        "risk_tier": {
+          "type": "string",
+          "enum": ["LOW", "MEDIUM", "HIGH"]
+        },
+        "qos": {
+          "type": "object",
+          "properties": {
+            "latency_max_ms": { "type": "number" },
+            "reliability_min": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
         }
-
       },
-
       "additionalProperties": false
-
     },
-
-    "cognitive_load_estimate": {
-
-      "type": "number",
-
-      "minimum": 0,
-
-      "maximum": 1
-
-    },
-
-    "risk_level": {
-
-      "type": "string",
-
-      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-
-    },
-
-    "information_bits": {
-
-      "type": "number",
-
-      "minimum": 0
-
-    },
-
-    "duration_ms": {
-
-      "type": "number",
-
-      "minimum": 0
-
-    },
-
-    "switching_count": {
-
-      "type": "integer",
-
-      "minimum": 0
-
-    },
-
-    "bandwidth_utilization": {
-
-      "type": "number",
-
-      "minimum": 0,
-
-      "maximum": 1
-
-    },
-
     "context": {
-
       "type": "object",
-
       "properties": {
-
-        "emotional_valence": { "type": "string" },
-
-        "notes": { "type": "string" }
-
+        "session_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "domain": { "type": "string" }
       },
-
-      "additionalProperties": true
-
+      "additionalProperties": false
+    },
+    "signature": {
+      "type": "object",
+      "required": ["suite", "sig"],
+      "properties": {
+        "suite": { "type": "string" },
+        "sig": { "type": "string" }
+      },
+      "additionalProperties": false
     }
-
   },
-
   "additionalProperties": false
-
 }

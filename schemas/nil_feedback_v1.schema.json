@@ -1,103 +1,51 @@
 {
-
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-
-  "$id": "https://ede-protocol.org/schemas/nil_feedback_v1.schema.json",
-
-  "title": "NIL Feedback v1",
-
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.edeprotocol.org/nil_feedback_v1.schema.json",
+  "title": "Neuro-Intent Language – Feedback v1",
   "type": "object",
-
   "required": [
-
-    "type",
-
-    "subject_neuro_did",
-
-    "session_id",
-
-    "timestamp",
-
-    "feedback_type",
-
-    "intensity",
-
-    "duration_ms",
-
+    "version",
+    "feedback_id",
+    "source",
+    "target",
+    "mode",
     "payload"
-
   ],
-
   "properties": {
-
-    "type": {
-
+    "version": { "type": "string", "const": "1.0" },
+    "feedback_id": {
       "type": "string",
-
-      "const": "NIL_FEEDBACK_V1"
-
+      "pattern": "^fbk_[a-zA-Z0-9]+$"
     },
-
-    "subject_neuro_did": {
-
-      "type": "string"
-
-    },
-
-    "session_id": {
-
-      "type": "string"
-
-    },
-
-    "timestamp": {
-
+    "source": {
       "type": "string",
-
-      "format": "date-time"
-
+      "pattern": "^did:ede:[a-zA-Z0-9:_-]+$"
     },
-
-    "feedback_type": {
-
+    "target": {
       "type": "string",
-
-      "enum": ["VISUAL_OVERLAY", "AUDITORY", "HAPTIC", "OTHER"]
-
+      "pattern": "^did:ede:[a-zA-Z0-9:_-]+$"
     },
-
-    "target_region": {
-
-      "type": "string"
-
+    "target_class": {
+      "type": "string",
+      "enum": ["H", "H_PLUS"]
     },
-
-    "intensity": {
-
-      "type": "number",
-
-      "minimum": 0,
-
-      "maximum": 1
-
+    "mode": {
+      "type": "string",
+      "enum": ["NEURAL_STIM", "VISUAL", "AUDIO", "HAPTIC"]
     },
-
-    "duration_ms": {
-
-      "type": "number",
-
-      "minimum": 0
-
-    },
-
     "payload": {
-
-      "type": "object"
-
+      "type": "object",
+      "description": "Feedback parameters, device-specific.",
+      "additionalProperties": true
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "session_id": { "type": "string" },
+        "related_intent_id": { "type": "string" }
+      },
+      "additionalProperties": false
     }
-
   },
-
   "additionalProperties": false
-
 }

@@ -1,103 +1,138 @@
 {
-
-  "session_id": "csl_session_123",
-
-  "subject_neuro_did": "did:neuro:mainnet:hplus-operator-001",
-
-  "created_at": "2032-04-10T20:15:00Z",
-
-  "ended_at": "2032-04-10T23:15:00Z",
-
-  "purpose": "H_PLUS_COPILOT_TRADING",
-
-  "metadata": {
-
-    "description": "3h intensive co-pilot trading with an agent squad on futures.",
-
-    "tags": ["TRADING", "H_PLUS", "AGENT_SQUAD", "HIGH_RISK"]
-
-  },
-
-  "stats": {
-
-    "total_intents": 145,
-
-    "total_streams": 24,
-
-    "average_cognitive_load": 0.68,
-
-    "max_cognitive_load": 0.94,
-
-    "average_risk_level": "HIGH",
-
-    "imagination_index": 0.74
-
-  },
-
-  "cogni_cost": {
-
-    "total_cost_units": 12950.3,
-
-    "currency": "COGNI_UNIT_V2"
-
-  },
-
-  "checkpoints": [
-
+  "$schema": "https://schema.edeprotocol.org/csl_session_v2.schema.json",
+  "version": "2.0",
+  "session_id": "sess_9x81alpha",
+  "domain": "AI_INFRA",
+  "participants": [
     {
-
-      "checkpoint_id": "chk_001",
-
-      "timestamp": "2032-04-10T21:00:00Z",
-
-      "cognitive_state_hash": "0xabc123",
-
-      "rollback_eligible": true,
-
-      "retention_days": 90
-
+      "entity_id": "did:ede:h:0xuser123",
+      "class": "H",
+      "role": "REQUESTOR",
+      "initial_ct_balance": 0,
+      "final_ct_balance": 0
     },
-
     {
-
-      "checkpoint_id": "chk_002",
-
-      "timestamp": "2032-04-10T22:15:00Z",
-
-      "cognitive_state_hash": "0xdef456",
-
-      "rollback_eligible": false,
-
-      "retention_days": 365
-
-    }
-
-  ],
-
-  "events": [
-
-    {
-
-      "event_type": "NIL_INTENT",
-
-      "ref_id": "nil_intent_001"
-
+      "entity_id": "did:ede:hplus:0xop42",
+      "class": "H_PLUS",
+      "role": "OPERATOR",
+      "initial_ct_balance": 1000,
+      "final_ct_balance": 850
     },
-
     {
-
-      "event_type": "NIL_STREAM",
-
-      "ref_id": "nil_stream_005"
-
+      "entity_id": "did:ede:so:coreweave_risk_squad",
+      "class": "SO",
+      "role": "SO_NODE",
+      "initial_ct_balance": 5000,
+      "final_ct_balance": 5100
+    },
+    {
+      "entity_id": "did:ede:ssi:ai_infra_committee",
+      "class": "SSI",
+      "role": "SSI_CLUSTER",
+      "initial_ct_balance": 0,
+      "final_ct_balance": 50
     }
-
   ],
-
-  "incident": {
-
-    "has_incident": false
-
-  }
-
+  "timeline": [
+    {
+      "t": "2025-12-04T10:30:00Z",
+      "event_type": "INTENT",
+      "intent": {
+        "version": "2.0",
+        "intent_id": "int_approve_coreweave_tranche",
+        "source": "did:ede:hplus:0xop42",
+        "source_class": "H_PLUS",
+        "target": "did:ede:so:coreweave_risk_squad",
+        "target_class": "SO",
+        "opcode": "DELEGATE_TASK",
+        "payload": {
+          "task_type": "infra_risk_review",
+          "constraints": [
+            "max_cost_ct:300",
+            "deadline:1800s"
+          ],
+          "ct_budget": 300,
+          "risk_tier": "HIGH",
+          "qos": {
+            "latency_max_ms": 500,
+            "reliability_min": 0.99
+          }
+        },
+        "context": {
+          "session_id": "sess_9x81alpha",
+          "domain": "AI_INFRA"
+        },
+        "signature": {
+          "suite": "PQ_DILITHIUM_3",
+          "sig": "0xop_sig..."
+        }
+      }
+    },
+    {
+      "t": "2025-12-04T10:31:10Z",
+      "event_type": "FLUX",
+      "flux": {
+        "channel_id": "ch_hplus_so_01",
+        "from": "did:ede:hplus:0xop42",
+        "to": "did:ede:so:coreweave_risk_squad",
+        "ct_delta": 150,
+        "proof": {
+          "claim": {
+            "channel": "ch_hplus_so_01",
+            "ct_delta": 150
+          },
+          "evidence": [
+            {
+              "type": "SIGNATURE",
+              "suite": "PQ_DILITHIUM_3",
+              "value": "0xop_sig..."
+            },
+            {
+              "type": "SIGNATURE",
+              "suite": "PQ_DILITHIUM_3",
+              "value": "0xso_sig..."
+            },
+            {
+              "type": "HASH_CHAIN",
+              "suite": "BLAKE3",
+              "value": "0xhash..."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "t": "2025-12-04T10:32:00Z",
+      "event_type": "CHECKPOINT",
+      "checkpoint": {
+        "focus_level": 0.82,
+        "risk_index": 0.71,
+        "imagination_index": 0.64
+      }
+    },
+    {
+      "t": "2025-12-04T10:33:30Z",
+      "event_type": "FUSION_START",
+      "fusion": {
+        "fusion_id": "fus_01",
+        "nodes": [
+          "did:ede:hplus:0xop42",
+          "did:ede:so:coreweave_risk_squad"
+        ],
+        "fusion_index_delta": 0.23
+      }
+    },
+    {
+      "t": "2025-12-04T10:36:00Z",
+      "event_type": "FUSION_END",
+      "fusion": {
+        "fusion_id": "fus_01",
+        "nodes": [
+          "did:ede:hplus:0xop42",
+          "did:ede:so:coreweave_risk_squad"
+        ],
+        "fusion_index_delta": 0.0
+      }
+    }
+  ]
 }

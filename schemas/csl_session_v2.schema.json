@@ -1,293 +1,127 @@
 {
-
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-
-  "$id": "https://ede-protocol.org/schemas/csl_session_v2.schema.json",
-
-  "title": "Cognitive Session Ledger v2",
-
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schema.edeprotocol.org/csl_session_v2.schema.json",
+  "title": "Cognitive Session Ledger – Session v2",
   "type": "object",
-
   "required": [
-
+    "version",
     "session_id",
-
-    "subject_neuro_did",
-
-    "created_at",
-
-    "purpose",
-
-    "stats",
-
-    "cogni_cost",
-
-    "checkpoints",
-
-    "events",
-
-    "incident"
-
+    "participants",
+    "timeline"
   ],
-
   "properties": {
-
+    "version": { "type": "string", "const": "2.0" },
     "session_id": {
-
-      "type": "string"
-
-    },
-
-    "subject_neuro_did": {
-
-      "type": "string"
-
-    },
-
-    "created_at": {
-
       "type": "string",
-
-      "format": "date-time"
-
+      "pattern": "^sess_[a-zA-Z0-9]+$"
     },
-
-    "ended_at": {
-
+    "domain": {
       "type": "string",
-
-      "format": "date-time"
-
+      "description": "Domain of the session (e.g. AI_INFRA, CAPITAL_ALLOCATION)."
     },
-
-    "purpose": {
-
-      "type": "string"
-
-    },
-
-    "metadata": {
-
-      "type": "object",
-
-      "properties": {
-
-        "description": { "type": "string" },
-
-        "tags": {
-
-          "type": "array",
-
-          "items": { "type": "string" }
-
-        }
-
-      },
-
-      "additionalProperties": true
-
-    },
-
-    "stats": {
-
-      "type": "object",
-
-      "required": [
-
-        "total_intents",
-
-        "total_streams",
-
-        "average_cognitive_load",
-
-        "max_cognitive_load",
-
-        "average_risk_level",
-
-        "imagination_index"
-
-      ],
-
-      "properties": {
-
-        "total_intents": { "type": "integer", "minimum": 0 },
-
-        "total_streams": { "type": "integer", "minimum": 0 },
-
-        "average_cognitive_load": {
-
-          "type": "number",
-
-          "minimum": 0,
-
-          "maximum": 1
-
-        },
-
-        "max_cognitive_load": {
-
-          "type": "number",
-
-          "minimum": 0,
-
-          "maximum": 1
-
-        },
-
-        "average_risk_level": {
-
-          "type": "string",
-
-          "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-
-        },
-
-        "imagination_index": {
-
-          "type": "number",
-
-          "minimum": 0,
-
-          "maximum": 1
-
-        }
-
-      },
-
-      "additionalProperties": false
-
-    },
-
-    "cogni_cost": {
-
-      "type": "object",
-
-      "required": ["total_cost_units", "currency"],
-
-      "properties": {
-
-        "total_cost_units": { "type": "number", "minimum": 0 },
-
-        "currency": { "type": "string" }
-
-      },
-
-      "additionalProperties": false
-
-    },
-
-    "checkpoints": {
-
+    "participants": {
       "type": "array",
-
+      "minItems": 1,
       "items": {
-
         "type": "object",
-
-        "required": [
-
-          "checkpoint_id",
-
-          "timestamp",
-
-          "cognitive_state_hash",
-
-          "rollback_eligible",
-
-          "retention_days"
-
-        ],
-
+        "required": ["entity_id", "class", "role"],
         "properties": {
-
-          "checkpoint_id": { "type": "string" },
-
-          "timestamp": { "type": "string", "format": "date-time" },
-
-          "cognitive_state_hash": { "type": "string" },
-
-          "rollback_eligible": { "type": "boolean" },
-
-          "retention_days": { "type": "integer", "minimum": 0 }
-
-        },
-
-        "additionalProperties": false
-
-      }
-
-    },
-
-    "events": {
-
-      "type": "array",
-
-      "items": {
-
-        "type": "object",
-
-        "required": ["event_type", "ref_id"],
-
-        "properties": {
-
-          "event_type": { "type": "string" },
-
-          "ref_id": { "type": "string" }
-
-        },
-
-        "additionalProperties": false
-
-      }
-
-    },
-
-    "incident": {
-
-      "type": "object",
-
-      "required": ["has_incident"],
-
-      "properties": {
-
-        "has_incident": { "type": "boolean" },
-
-        "incident_type": { "type": "string" },
-
-        "description": { "type": "string" },
-
-        "related_intent_ids": {
-
-          "type": "array",
-
-          "items": { "type": "string" }
-
-        },
-
-        "post_mortem": {
-
-          "type": "object",
-
-          "properties": {
-
-            "completed": { "type": "boolean" },
-
-            "report_uri": { "type": "string" }
-
+          "entity_id": {
+            "type": "string",
+            "pattern": "^did:ede:[a-zA-Z0-9:_-]+$"
           },
-
-          "additionalProperties": false
-
-        }
-
-      },
-
-      "additionalProperties": false
-
+          "class": {
+            "type": "string",
+            "enum": ["H", "H_PLUS", "SO", "SSI"]
+          },
+          "role": {
+            "type": "string",
+            "enum": ["REQUESTOR", "OPERATOR", "SO_NODE", "SSI_CLUSTER", "OBSERVER"]
+          },
+          "initial_ct_balance": { "type": "number" },
+          "final_ct_balance": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["t", "event_type"],
+        "properties": {
+          "t": { "type": "string", "format": "date-time" },
+          "event_type": {
+            "type": "string",
+            "enum": ["INTENT", "FLUX", "CHECKPOINT", "FUSION_START", "FUSION_END"]
+          },
+          "intent": {
+            "$ref": "https://schema.edeprotocol.org/nil_intent_v2.schema.json"
+          },
+          "flux": {
+            "type": "object",
+            "required": ["channel_id", "ct_delta", "proof"],
+            "properties": {
+              "channel_id": { "type": "string" },
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "ct_delta": { "type": "number" },
+              "proof": {
+                "type": "object",
+                "required": ["claim", "evidence"],
+                "properties": {
+                  "claim": {
+                    "type": "object",
+                    "properties": {
+                      "channel": { "type": "string" },
+                      "ct_delta": { "type": "number" }
+                    },
+                    "additionalProperties": false
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string" },
+                        "suite": { "type": "string" },
+                        "value": { "type": "string" }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "checkpoint": {
+            "type": "object",
+            "properties": {
+              "focus_level": { "type": "number" },
+              "risk_index": { "type": "number" },
+              "imagination_index": { "type": "number" }
+            },
+            "additionalProperties": false
+          },
+          "fusion": {
+            "type": "object",
+            "properties": {
+              "fusion_id": { "type": "string" },
+              "nodes": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "fusion_index_delta": { "type": "number" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
     }
-
   },
-
   "additionalProperties": false
-
 }
