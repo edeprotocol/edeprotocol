@@ -1,0 +1,109 @@
+{
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "https://ede-protocol.org/schemas/nil_stream_v1.schema.json",
+
+  "title": "NIL Stream v1",
+
+  "type": "object",
+
+  "required": [
+
+    "type",
+
+    "subject_neuro_did",
+
+    "session_id",
+
+    "stream_id",
+
+    "chunk_duration_ms",
+
+    "chunks",
+
+    "finalized"
+
+  ],
+
+  "properties": {
+
+    "type": {
+
+      "type": "string",
+
+      "const": "NIL_STREAM_V1"
+
+    },
+
+    "subject_neuro_did": {
+
+      "type": "string"
+
+    },
+
+    "session_id": {
+
+      "type": "string"
+
+    },
+
+    "stream_id": {
+
+      "type": "string"
+
+    },
+
+    "chunk_duration_ms": {
+
+      "type": "number",
+
+      "minimum": 1
+
+    },
+
+    "chunks": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "required": ["timestamp", "partial_intent_text", "confidence"],
+
+        "properties": {
+
+          "timestamp": { "type": "string", "format": "date-time" },
+
+          "partial_intent_text": { "type": "string" },
+
+          "confidence": {
+
+            "type": "number",
+
+            "minimum": 0,
+
+            "maximum": 1
+
+          }
+
+        },
+
+        "additionalProperties": false
+
+      }
+
+    },
+
+    "finalized": {
+
+      "type": "boolean"
+
+    }
+
+  },
+
+  "additionalProperties": false
+
+}

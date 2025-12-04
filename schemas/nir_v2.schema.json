@@ -1,0 +1,345 @@
+{
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "https://ede-protocol.org/schemas/nir_v2.schema.json",
+
+  "title": "Neural Identity Registry v2",
+
+  "type": "object",
+
+  "required": [
+
+    "neuro_did",
+
+    "entity_type",
+
+    "cognitive_profile",
+
+    "liveness_protocol",
+
+    "augmentation_profile",
+
+    "compliance_flags"
+
+  ],
+
+  "properties": {
+
+    "neuro_did": {
+
+      "type": "string",
+
+      "pattern": "^did:neuro:[a-zA-Z0-9_-]+:[a-zA-Z0-9._:-]+$"
+
+    },
+
+    "entity_type": {
+
+      "type": "string",
+
+      "enum": ["H", "H_PLUS", "AGENT"]
+
+    },
+
+    "cognitive_profile": {
+
+      "type": "object",
+
+      "required": ["bandwidth_class", "certified_bandwidth_bps", "cost_coefficients"],
+
+      "properties": {
+
+        "bandwidth_class": {
+
+          "type": "string",
+
+          "enum": ["BASELINE", "H_PLUS_TIER1", "H_PLUS_TIER2", "AGENT"]
+
+        },
+
+        "certified_bandwidth_bps": {
+
+          "type": "number",
+
+          "minimum": 0
+
+        },
+
+        "cost_coefficients": {
+
+          "type": "object",
+
+          "required": [
+
+            "alpha_information",
+
+            "beta_time",
+
+            "gamma_load",
+
+            "delta_criticality",
+
+            "epsilon_bandwidth",
+
+            "zeta_fatigue"
+
+          ],
+
+          "properties": {
+
+            "alpha_information": { "type": "number" },
+
+            "beta_time": { "type": "number" },
+
+            "gamma_load": { "type": "number" },
+
+            "delta_criticality": { "type": "number" },
+
+            "epsilon_bandwidth": { "type": "number" },
+
+            "zeta_fatigue": { "type": "number" }
+
+          },
+
+          "additionalProperties": false
+
+        }
+
+      },
+
+      "additionalProperties": false
+
+    },
+
+    "liveness_protocol": {
+
+      "type": "object",
+
+      "required": [
+
+        "challenge_type",
+
+        "expected_latency_ms_range",
+
+        "entropy_threshold"
+
+      ],
+
+      "properties": {
+
+        "challenge_type": {
+
+          "type": "string",
+
+          "enum": ["VISUAL_EVOKED", "AUDITORY_P300", "MOTOR_IMAGERY"]
+
+        },
+
+        "expected_latency_ms_range": {
+
+          "type": "array",
+
+          "items": { "type": "number" },
+
+          "minItems": 2,
+
+          "maxItems": 2
+
+        },
+
+        "entropy_threshold": {
+
+          "type": "number",
+
+          "minimum": 0,
+
+          "maximum": 1
+
+        }
+
+      },
+
+      "additionalProperties": false
+
+    },
+
+    "augmentation_profile": {
+
+      "type": "object",
+
+      "required": ["status", "devices"],
+
+      "properties": {
+
+        "status": {
+
+          "type": "string",
+
+          "enum": ["NONE", "TRANSIENT", "PERSISTENT"]
+
+        },
+
+        "devices": {
+
+          "type": "array",
+
+          "items": {
+
+            "type": "object",
+
+            "required": ["device_type", "vendor", "model"],
+
+            "properties": {
+
+              "device_type": {
+
+                "type": "string",
+
+                "enum": ["NON_INVASIVE_BCI", "INVASIVE_BCI", "EMG", "WEARABLE"]
+
+              },
+
+              "vendor": { "type": "string" },
+
+              "model": { "type": "string" },
+
+              "bandwidth_bps": { "type": "number", "minimum": 0 },
+
+              "channels": { "type": "integer", "minimum": 1 }
+
+            },
+
+            "additionalProperties": false
+
+          }
+
+        },
+
+        "agent_companions": {
+
+          "type": "array",
+
+          "items": {
+
+            "type": "object",
+
+            "required": ["agent_did"],
+
+            "properties": {
+
+              "agent_did": { "type": "string" },
+
+              "capabilities": {
+
+                "type": "array",
+
+                "items": { "type": "string" }
+
+              }
+
+            },
+
+            "additionalProperties": false
+
+          }
+
+        }
+
+      },
+
+      "additionalProperties": false
+
+    },
+
+    "linked_wallets": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "required": ["type", "address"],
+
+        "properties": {
+
+          "type": { "type": "string" },
+
+          "address": { "type": "string" },
+
+          "label": { "type": "string" }
+
+        },
+
+        "additionalProperties": false
+
+      }
+
+    },
+
+    "compliance_flags": {
+
+      "type": "object",
+
+      "required": ["neurorights_respected", "consent_status", "jurisdiction"],
+
+      "properties": {
+
+        "neurorights_respected": { "type": "boolean" },
+
+        "consent_status": {
+
+          "type": "string",
+
+          "enum": ["ACTIVE", "REVOKED", "UNKNOWN"]
+
+        },
+
+        "jurisdiction": { "type": "string" },
+
+        "data_minimization": { "type": "boolean" }
+
+      },
+
+      "additionalProperties": false
+
+    },
+
+    "delegation_chain": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "required": ["delegate_did", "scope"],
+
+        "properties": {
+
+          "delegate_did": { "type": "string" },
+
+          "scope": {
+
+            "type": "array",
+
+            "items": { "type": "string" }
+
+          },
+
+          "expiry": { "type": "string", "format": "date-time" }
+
+        },
+
+        "additionalProperties": false
+
+      }
+
+    }
+
+  },
+
+  "additionalProperties": false
+
+}

@@ -1,0 +1,103 @@
+{
+
+  "session_id": "csl_session_123",
+
+  "subject_neuro_did": "did:neuro:mainnet:hplus-operator-001",
+
+  "created_at": "2032-04-10T20:15:00Z",
+
+  "ended_at": "2032-04-10T23:15:00Z",
+
+  "purpose": "H_PLUS_COPILOT_TRADING",
+
+  "metadata": {
+
+    "description": "3h intensive co-pilot trading with an agent squad on futures.",
+
+    "tags": ["TRADING", "H_PLUS", "AGENT_SQUAD", "HIGH_RISK"]
+
+  },
+
+  "stats": {
+
+    "total_intents": 145,
+
+    "total_streams": 24,
+
+    "average_cognitive_load": 0.68,
+
+    "max_cognitive_load": 0.94,
+
+    "average_risk_level": "HIGH",
+
+    "imagination_index": 0.74
+
+  },
+
+  "cogni_cost": {
+
+    "total_cost_units": 12950.3,
+
+    "currency": "COGNI_UNIT_V2"
+
+  },
+
+  "checkpoints": [
+
+    {
+
+      "checkpoint_id": "chk_001",
+
+      "timestamp": "2032-04-10T21:00:00Z",
+
+      "cognitive_state_hash": "0xabc123",
+
+      "rollback_eligible": true,
+
+      "retention_days": 90
+
+    },
+
+    {
+
+      "checkpoint_id": "chk_002",
+
+      "timestamp": "2032-04-10T22:15:00Z",
+
+      "cognitive_state_hash": "0xdef456",
+
+      "rollback_eligible": false,
+
+      "retention_days": 365
+
+    }
+
+  ],
+
+  "events": [
+
+    {
+
+      "event_type": "NIL_INTENT",
+
+      "ref_id": "nil_intent_001"
+
+    },
+
+    {
+
+      "event_type": "NIL_STREAM",
+
+      "ref_id": "nil_stream_005"
+
+    }
+
+  ],
+
+  "incident": {
+
+    "has_incident": false
+
+  }
+
+}
