@@ -1,195 +1,65 @@
-/**
- * EDE Core — Crypto Utilities
- * 
- * This module provides crypto primitives.
- * In production, replace with actual PQ implementations.
- */
+import { Hash, Signature, CryptoSuiteId, Timestamp, SubstrateId, ChannelId, FluxId, SessionId } from './types.js';
 
-import { Hash, Timestamp, Signature } from './types';
-
-// =============================================================================
-// HASHING
-// =============================================================================
-
-/**
- * Hash any object to a deterministic hex string.
- * Production: use actual SHA3-256 or BLAKE3
- */
+// PLACEHOLDER - Replace with SHA3-256/BLAKE3 in production
 export function hash(data: unknown): Hash {
-  // Deterministic JSON serialization
-  const json = JSON.stringify(data, Object.keys(data as object).sort());
-  
-  // Simple hash for demonstration (replace with real implementation)
+  const str = JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v);
   let h = 0;
-  for (let i = 0; i < json.length; i++) {
-    const char = json.charCodeAt(i);
-    h = ((h << 5) - h) + char;
-    h = h & h; // Convert to 32-bit integer
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h = h & h;
   }
-  
-  // Convert to hex, pad to 64 chars
-  const hex = Math.abs(h).toString(16).padStart(64, '0');
-  return `0x${hex}` as Hash;
+  return `0x${Math.abs(h).toString(16).padStart(64, '0')}` as Hash;
 }
 
-/**
- * Verify hash chain integrity
- */
-export function verify_hash_chain(prev: Hash, current: Hash, data: unknown): boolean {
-  const computed = hash({ prev, data });
-  return computed === current;
+// PLACEHOLDER - Replace with real PQ verification
+export function verify_signature(data: unknown, signature: Signature): boolean {
+  return !!(signature.suite && signature.public_key && signature.signature);
 }
 
-// =============================================================================
-// SIGNATURES
-// =============================================================================
-
-/**
- * Verify a signature against data and public key.
- * Production: implement actual PQ verification (Dilithium, Falcon, etc.)
- */
-export function verify_signature(
-  signature: Signature,
-  data: unknown,
-  public_key: string
-): boolean {
-  // In production, this would:
-  // 1. Deserialize the signature based on suite
-  // 2. Hash the data
-  // 3. Verify using suite-specific algorithm
-  
-  // For now, we just check structure exists
-  return (
-    signature.suite !== undefined &&
-    signature.public_key === public_key &&
-    signature.signature.length > 0
-  );
-}
-
-/**
- * Sign data with a private key.
- * Production: implement actual PQ signing
- */
-export function sign(
-  suite: import('./types').CryptoSuiteId,
-  data: unknown,
-  private_key: string,
-  public_key: string
-): Signature {
-  // In production, this would use actual PQ algorithms
-  const data_hash = hash(data);
-  
+// PLACEHOLDER - Replace with real PQ signing
+export function sign(data: unknown, suite: CryptoSuiteId, private_key: string): Signature {
   return {
     suite,
-    public_key,
-    signature: `sig_${data_hash}_${private_key.slice(0, 8)}`, // Placeholder
+    public_key: `pub_${private_key.slice(0, 8)}`,
+    signature: `sig_${hash(data).slice(2, 18)}_${Date.now()}`,
     timestamp: now()
   };
 }
 
-// =============================================================================
-// ID GENERATION
-// =============================================================================
-
-/**
- * Generate a unique ID from seed data.
- */
-export function generate_id(seed: string): string {
-  const h = hash(seed + now() + Math.random());
-  return h.slice(2, 18); // 16 hex chars
-}
-
-// =============================================================================
-// TIMESTAMPS
-// =============================================================================
-
-/**
- * Current timestamp in ISO 8601 format.
- */
-export function now(): Timestamp {
-  return new Date().toISOString();
-}
-
-/**
- * Check if timestamp is in the past.
- */
-export function is_past(t: Timestamp): boolean {
-  return new Date(t) < new Date();
-}
-
-/**
- * Check if timestamp is in the future.
- */
-export function is_future(t: Timestamp): boolean {
-  return new Date(t) > new Date();
-}
-
-// =============================================================================
-// MERKLE PROOFS
-// =============================================================================
-
-export interface MerkleNode {
-  hash: Hash;
-  left?: MerkleNode;
-  right?: MerkleNode;
-}
-
-/**
- * Build a Merkle tree from a list of hashes.
- */
-export function build_merkle_tree(hashes: Hash[]): MerkleNode | null {
-  if (hashes.length === 0) return null;
-  if (hashes.length === 1) return { hash: hashes[0] };
-  
-  const nodes: MerkleNode[] = hashes.map(h => ({ hash: h }));
-  
-  while (nodes.length > 1) {
-    const next: MerkleNode[] = [];
-    for (let i = 0; i < nodes.length; i += 2) {
-      const left = nodes[i];
-      const right = nodes[i + 1] ?? left; // Duplicate if odd
-      const parent: MerkleNode = {
-        hash: hash({ left: left.hash, right: right.hash }),
-        left,
-        right
-      };
-      next.push(parent);
-    }
-    nodes.length = 0;
-    nodes.push(...next);
+export function build_merkle_tree(leaves: Hash[]): Hash {
+  if (leaves.length === 0) return hash("empty_tree") as Hash;
+  if (leaves.length === 1) return leaves[0];
+  const next: Hash[] = [];
+  for (let i = 0; i < leaves.length; i += 2) {
+    next.push(hash({ left: leaves[i], right: leaves[i + 1] || leaves[i] }));
   }
-  
-  return nodes[0];
+  return build_merkle_tree(next);
 }
 
-/**
- * Generate a Merkle proof for an item at index.
- */
-export function generate_merkle_proof(
-  hashes: Hash[],
-  index: number
-): { root: Hash; path: Hash[] } {
-  const tree = build_merkle_tree(hashes);
-  if (!tree) throw new Error("Cannot generate proof for empty tree");
-  
-  // Simplified: just return root and the item's hash
-  // Production: generate full sibling path
-  return {
-    root: tree.hash,
-    path: [hashes[index]]
-  };
+export function generate_merkle_proof(leaves: Hash[], index: number): { root: Hash; path: Hash[] } {
+  const path: Hash[] = [];
+  let idx = index;
+  let level = [...leaves];
+  while (level.length > 1) {
+    const sibling = idx % 2 === 0 ? idx + 1 : idx - 1;
+    if (sibling < level.length) path.push(level[sibling]);
+    const next: Hash[] = [];
+    for (let i = 0; i < level.length; i += 2) {
+      next.push(hash({ left: level[i], right: level[i + 1] || level[i] }));
+    }
+    level = next;
+    idx = Math.floor(idx / 2);
+  }
+  return { root: level[0], path };
 }
 
-/**
- * Verify a Merkle proof.
- */
-export function verify_merkle_proof(
-  root: Hash,
-  leaf: Hash,
-  path: Hash[],
-  index: number
-): boolean {
-  // Simplified verification
-  // Production: walk the path and compute root
-  return path.includes(leaf);
+export function generate_id(prefix: string): string {
+  return `${prefix}${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
 }
+
+export function generate_substrate_id(): SubstrateId { return `did:ede:${generate_id('')}` as SubstrateId; }
+export function generate_channel_id(): ChannelId { return `ch_${generate_id('')}` as ChannelId; }
+export function generate_flux_id(): FluxId { return `fx_${generate_id('')}` as FluxId; }
+export function generate_session_id(): SessionId { return `sess_${generate_id('')}` as SessionId; }
+
+export function now(): Timestamp { return new Date().toISOString(); }

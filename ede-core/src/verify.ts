@@ -1,342 +1,183 @@
-/**
- * EDE Core — Verification & Invariants
- * 
- * Invariants are theorems on the proof set.
- * If all proofs verify and all invariants hold, the system is consistent.
- */
-
 import {
-  Proof, Evidence, VerificationResult,
-  Csl, AnyCslEvent,
-  CT, Hash,
-  is_pq_suite
-} from './types';
+  Hash, CT, SubstrateId, SessionId,
+  SignatureEvidence, HashChainEvidence,
+  Csl, AnyCslEvent, Flux, Settlement, Session, Substrate, Channel,
+  VerifyContext, InvariantResult, InvariantViolation, InvariantSuiteResult,
+  isFluxEvent, isSessionEvent, isSubstrateEvent, isChannelEvent, isSettlementEvent,
+  isHumanClass, isGuardRole, is_pq_suite
+} from './types.js';
+import { hash } from './crypto.js';
 
-import { hash } from './crypto';
-
-// =============================================================================
-// PROOF VERIFICATION
-// =============================================================================
-
-/**
- * Verify any proof by calling its verify method.
- */
-export function verify_proof<T>(proof: Proof<T>): VerificationResult {
-  return proof.verify();
-}
-
-/**
- * Verify all proofs in a CSL.
- */
-export function verify_all_proofs(csl: Csl): VerificationResult {
+export function verify_ct_conservation(csl: Csl, ctx: VerifyContext): InvariantResult {
+  const violations: InvariantViolation[] = [];
   for (const event of csl.events) {
-    const result = event.proof.verify();
-    if (!result.valid) {
-      return {
-        valid: false,
-        reason: `Event ${event.id} failed verification: ${result.reason}`
-      };
+    if (!isSettlementEvent(event)) continue;
+    const s = event.proof.claim;
+    const total_dist = s.distributions.reduce((sum, d) => sum + d.ct_amount, 0n);
+    if (s.total_fluxed !== total_dist + s.fees) {
+      violations.push({ code: "CT_MISMATCH", message: `Settlement CT mismatch: ${s.total_fluxed} != ${total_dist} + ${s.fees}` });
     }
   }
-  return { valid: true };
+  return { name: "CT_CONSERVATION", ok: violations.length === 0, violations };
 }
 
-// =============================================================================
-// INVARIANT 1: CT CONSERVATION
-// =============================================================================
-
-/**
- * Verify that CT is conserved across all settlements in the CSL.
- * 
- * For every settlement: Σ(ct_in) = Σ(ct_out) + fees
- */
-export function verify_ct_conservation(csl: Csl): VerificationResult {
-  const settlements = csl.events.filter(e => e.type === "CHANNEL_SETTLED");
-  
-  for (const event of settlements) {
-    const settlement = event.proof.claim;
-    const distributed = settlement.distributions.reduce(
-      (sum, d) => sum + d.ct_amount,
-      0n
-    );
-    const total_out = distributed + settlement.fees;
-    
-    if (total_out !== settlement.total_fluxed) {
-      return {
-        valid: false,
-        reason: `CT conservation violated in settlement ${event.id}: ` +
-                `fluxed=${settlement.total_fluxed}, out=${total_out}`
-      };
-    }
-  }
-  
-  return { valid: true };
-}
-
-// =============================================================================
-// INVARIANT 2: BILATERAL ATTESTATION
-// =============================================================================
-
-/**
- * Verify that every flux has bilateral signatures.
- */
-export function verify_bilateral_attestation(csl: Csl): VerificationResult {
-  const fluxes = csl.events.filter(e => e.type === "FLUX");
-  
-  for (const event of fluxes) {
+export function verify_bilateral_attestation(csl: Csl, ctx: VerifyContext): InvariantResult {
+  const violations: InvariantViolation[] = [];
+  for (const event of csl.events) {
+    if (!isFluxEvent(event)) continue;
     const flux = event.proof.claim;
-    const evidence = event.proof.evidence;
-    
-    const signatures = evidence.filter(e => e.type === "SIGNATURE");
-    const parties = new Set(signatures.map(s => (s as any).party));
-    
-    if (!parties.has(flux.from) || !parties.has(flux.to)) {
-      return {
-        valid: false,
-        reason: `Flux ${event.id} missing bilateral signatures`
-      };
+    const sigs = event.proof.evidence.filter(e => e.type === "SIGNATURE") as SignatureEvidence[];
+    if (sigs.length < 2) {
+      violations.push({ code: "MISSING_BILATERAL_SIG", message: `Flux ${flux.id} needs 2 signatures, has ${sigs.length}` });
     }
   }
-  
-  return { valid: true };
+  return { name: "BILATERAL_ATTESTATION", ok: violations.length === 0, violations };
 }
 
-// =============================================================================
-// INVARIANT 3: APPEND-ONLY (HASH CHAIN INTEGRITY)
-// =============================================================================
+export function verify_append_only(csl: Csl, ctx: VerifyContext): InvariantResult {
+  const violations: InvariantViolation[] = [];
+  if (csl.events.length === 0) return { name: "APPEND_ONLY", ok: true, violations };
 
-/**
- * Verify that the CSL forms a valid hash chain.
- */
-export function verify_append_only(csl: Csl): VerificationResult {
-  if (csl.events.length === 0) {
-    return { valid: true };
+  const genesis = hash("EDE_GENESIS_v5") as Hash;
+  let expected_prev = genesis;
+
+  for (let i = 0; i < csl.events.length; i++) {
+    const event = csl.events[i];
+    const hc = event.proof.evidence.find(e => e.type === "HASH_CHAIN") as HashChainEvidence | undefined;
+    if (!hc) {
+      violations.push({ code: "MISSING_HASH_CHAIN", message: `Event ${i} missing hash chain` });
+      continue;
+    }
+    if (hc.prev !== expected_prev) {
+      violations.push({ code: "HASH_CHAIN_BROKEN", message: `Event ${i} hash chain broken` });
+    }
+    expected_prev = hc.current;
   }
-  
-  let prev_hash: Hash = "0x" + "0".repeat(64) as Hash; // Genesis
-  
+  return { name: "APPEND_ONLY", ok: violations.length === 0, violations };
+}
+
+export function verify_substrate_sovereignty(csl: Csl, ctx: VerifyContext): InvariantResult {
+  const violations: InvariantViolation[] = [];
   for (const event of csl.events) {
-    const hash_evidence = event.proof.evidence.find(
-      e => e.type === "HASH_CHAIN"
-    );
-    
-    if (!hash_evidence) {
-      return {
-        valid: false,
-        reason: `Event ${event.id} missing hash chain evidence`
-      };
-    }
-    
-    const hc = hash_evidence as { prev: Hash; current: Hash };
-    
-    if (hc.prev !== prev_hash) {
-      return {
-        valid: false,
-        reason: `Hash chain broken at event ${event.id}: ` +
-                `expected prev=${prev_hash}, got ${hc.prev}`
-      };
-    }
-    
-    prev_hash = hc.current;
+    if (!isChannelEvent(event)) continue;
+    const ch = event.proof.claim;
+    const sigs = event.proof.evidence.filter(e => e.type === "SIGNATURE") as SignatureEvidence[];
+    const parties = new Set(sigs.map(s => s.party));
+    if (!parties.has(ch.from)) violations.push({ code: "MISSING_FROM_CONSENT", message: `Channel ${ch.id} missing consent from ${ch.from}` });
+    if (!parties.has(ch.to)) violations.push({ code: "MISSING_TO_CONSENT", message: `Channel ${ch.id} missing consent from ${ch.to}` });
   }
-  
-  // Verify head matches
-  if (prev_hash !== csl.head) {
-    return {
-      valid: false,
-      reason: `CSL head mismatch: expected ${prev_hash}, got ${csl.head}`
-    };
-  }
-  
-  return { valid: true };
+  return { name: "SUBSTRATE_SOVEREIGNTY", ok: violations.length === 0, violations };
 }
 
-// =============================================================================
-// INVARIANT 4: SUBSTRATE SOVEREIGNTY
-// =============================================================================
-
-/**
- * Verify that every channel has signatures from both endpoints.
- */
-export function verify_substrate_sovereignty(csl: Csl): VerificationResult {
-  const channels = csl.events.filter(e => e.type === "CHANNEL_AUTHORIZED");
-  
-  for (const event of channels) {
-    const channel = event.proof.claim;
-    const evidence = event.proof.evidence;
-    
-    const signatures = evidence.filter(e => e.type === "SIGNATURE");
-    const parties = new Set(signatures.map(s => (s as any).party));
-    
-    if (!parties.has(channel.from) || !parties.has(channel.to)) {
-      return {
-        valid: false,
-        reason: `Channel ${event.id} missing consent from both parties`
-      };
-    }
-  }
-  
-  return { valid: true };
-}
-
-// =============================================================================
-// INVARIANT 5: POST-QUANTUM COMPLIANCE
-// =============================================================================
-
-/**
- * Verify that all root-of-trust operations have PQ signatures.
- */
-export function verify_pq_compliance(csl: Csl): VerificationResult {
-  const root_of_trust_types = [
-    "SUBSTRATE_REGISTERED",
-    "CHANNEL_AUTHORIZED",
-    "CHANNEL_SETTLED"
-  ];
-  
+export function verify_pq_compliance(csl: Csl, ctx: VerifyContext): InvariantResult {
+  const violations: InvariantViolation[] = [];
   for (const event of csl.events) {
-    if (!root_of_trust_types.includes(event.type)) continue;
-    
-    const signatures = event.proof.evidence.filter(e => e.type === "SIGNATURE");
-    const has_pq = signatures.some(s => is_pq_suite((s as any).suite));
-    
-    if (!has_pq) {
-      return {
-        valid: false,
-        reason: `Root-of-trust event ${event.id} (${event.type}) lacks PQ signature`
-      };
+    if (isSubstrateEvent(event)) {
+      const sigs = event.proof.evidence.filter(e => e.type === "SIGNATURE") as SignatureEvidence[];
+      if (!sigs.some(s => is_pq_suite(s.suite))) {
+        violations.push({ code: "SUBSTRATE_NOT_PQ", message: "Substrate registration requires PQ signature" });
+      }
+    }
+    if (isSettlementEvent(event)) {
+      const sigs = event.proof.evidence.filter(e => e.type === "SIGNATURE") as SignatureEvidence[];
+      if (!sigs.every(s => is_pq_suite(s.suite))) {
+        violations.push({ code: "SETTLEMENT_NOT_PQ", message: "Settlement requires all PQ signatures" });
+      }
     }
   }
-  
-  return { valid: true };
+  return { name: "PQ_COMPLIANCE", ok: violations.length === 0, violations };
 }
 
-// =============================================================================
-// INVARIANT 6: TOPOLOGY NEUTRALITY
-// =============================================================================
-
-/**
- * Verify that CSL contains only canonical event types.
- * (The format is valid regardless of network topology)
- */
-export function verify_topology_neutrality(csl: Csl): VerificationResult {
-  const valid_types = [
-    "SUBSTRATE_REGISTERED",
-    "CHANNEL_AUTHORIZED",
-    "FLUX",
-    "CHANNEL_SETTLED"
-  ];
-  
+export function verify_topology_neutrality(csl: Csl, ctx: VerifyContext): InvariantResult {
+  const violations: InvariantViolation[] = [];
+  const valid_types = new Set(["SUBSTRATE_REGISTERED", "CHANNEL_AUTHORIZED", "SESSION_CREATED", "FLUX", "CHANNEL_SETTLED"]);
   for (const event of csl.events) {
-    if (!valid_types.includes(event.type)) {
-      return {
-        valid: false,
-        reason: `Unknown event type: ${event.type}`
-      };
+    if (!valid_types.has(event.type)) {
+      violations.push({ code: "INVALID_EVENT_TYPE", message: `Unknown event type: ${event.type}` });
     }
   }
-  
-  return { valid: true };
+  return { name: "TOPOLOGY_NEUTRALITY", ok: violations.length === 0, violations };
 }
 
-// =============================================================================
-// VERIFY ALL INVARIANTS
-// =============================================================================
+export function verify_h_guard(csl: Csl, ctx: VerifyContext): InvariantResult {
+  const violations: InvariantViolation[] = [];
+  const sessions = new Map<SessionId, Session>();
+  const fluxesBySession = new Map<SessionId, Flux[]>();
 
-export interface InvariantResults {
-  ct_conservation: VerificationResult;
-  bilateral_attestation: VerificationResult;
-  append_only: VerificationResult;
-  substrate_sovereignty: VerificationResult;
-  pq_compliance: VerificationResult;
-  topology_neutrality: VerificationResult;
-  all_valid: boolean;
+  for (const event of csl.events) {
+    if (isSessionEvent(event)) sessions.set(event.proof.claim.id, event.proof.claim);
+    if (isFluxEvent(event) && event.proof.claim.session_id) {
+      const sid = event.proof.claim.session_id;
+      const arr = fluxesBySession.get(sid) || [];
+      arr.push(event.proof.claim);
+      fluxesBySession.set(sid, arr);
+    }
+  }
+
+  for (const [session_id, session] of sessions) {
+    const fluxes = fluxesBySession.get(session_id) || [];
+    const hasCritical = fluxes.some(f => f.is_critical === true || f.ct_delta >= ctx.ct_critical_threshold);
+    if (!hasCritical) continue;
+
+    const hasHumanGuard = session.participants.some(p => isHumanClass(p.class) && isGuardRole(p.role));
+    if (!hasHumanGuard) {
+      violations.push({
+        code: "H_GUARD_MISSING",
+        message: "Critical CT flows require H/H+ in REQUESTOR or OPERATOR role",
+        session_id
+      });
+    }
+  }
+  return { name: "H_GUARD_CRITICAL_CT", ok: violations.length === 0, violations };
 }
 
-/**
- * Verify all invariants on a CSL.
- */
-export function verify_all_invariants(csl: Csl): InvariantResults {
-  const results: InvariantResults = {
-    ct_conservation: verify_ct_conservation(csl),
-    bilateral_attestation: verify_bilateral_attestation(csl),
-    append_only: verify_append_only(csl),
-    substrate_sovereignty: verify_substrate_sovereignty(csl),
-    pq_compliance: verify_pq_compliance(csl),
-    topology_neutrality: verify_topology_neutrality(csl),
-    all_valid: false
-  };
-  
-  results.all_valid = Object.entries(results)
-    .filter(([k]) => k !== 'all_valid')
-    .every(([, v]) => (v as VerificationResult).valid);
-  
-  return results;
-}
+export function verify_all_invariants(csl: Csl, ctx: VerifyContext): InvariantSuiteResult {
+  const CT_CONSERVATION = verify_ct_conservation(csl, ctx);
+  const BILATERAL_ATTESTATION = verify_bilateral_attestation(csl, ctx);
+  const APPEND_ONLY = verify_append_only(csl, ctx);
+  const SUBSTRATE_SOVEREIGNTY = verify_substrate_sovereignty(csl, ctx);
+  const PQ_COMPLIANCE = verify_pq_compliance(csl, ctx);
+  const TOPOLOGY_NEUTRALITY = verify_topology_neutrality(csl, ctx);
+  const H_GUARD_CRITICAL_CT = verify_h_guard(csl, ctx);
 
-// =============================================================================
-// DERIVE STATE FROM PROOFS
-// =============================================================================
+  const all_ok = [CT_CONSERVATION, BILATERAL_ATTESTATION, APPEND_ONLY, SUBSTRATE_SOVEREIGNTY, PQ_COMPLIANCE, TOPOLOGY_NEUTRALITY, H_GUARD_CRITICAL_CT].every(r => r.ok);
+
+  return { CT_CONSERVATION, BILATERAL_ATTESTATION, APPEND_ONLY, SUBSTRATE_SOVEREIGNTY, PQ_COMPLIANCE, TOPOLOGY_NEUTRALITY, H_GUARD_CRITICAL_CT, all_ok };
+}
 
 export interface DerivedState {
-  substrates: Map<string, any>;
-  channels: Map<string, any>;
-  ct_balances: Map<string, CT>;
+  substrates: Map<SubstrateId, Substrate>;
+  channels: Map<string, Channel>;
+  sessions: Map<SessionId, Session>;
+  ct_balances: Map<SubstrateId, CT>;
 }
 
-/**
- * Derive system state from CSL proofs.
- * 
- * This is how any node can reconstruct state from proofs alone.
- */
 export function derive_state(csl: Csl): DerivedState {
-  const state: DerivedState = {
-    substrates: new Map(),
-    channels: new Map(),
-    ct_balances: new Map()
-  };
-  
+  const substrates = new Map<SubstrateId, Substrate>();
+  const channels = new Map<string, Channel>();
+  const sessions = new Map<SessionId, Session>();
+  const ct_balances = new Map<SubstrateId, CT>();
+
   for (const event of csl.events) {
-    switch (event.type) {
-      case "SUBSTRATE_REGISTERED": {
-        const substrate = event.proof.claim;
-        state.substrates.set(substrate.id, substrate);
-        state.ct_balances.set(substrate.id, substrate.ct_balance);
-        break;
-      }
-      
-      case "CHANNEL_AUTHORIZED": {
-        const channel = event.proof.claim;
-        state.channels.set(channel.id, channel);
-        // Lock CT from source
-        const from_balance = state.ct_balances.get(channel.from) ?? 0n;
-        state.ct_balances.set(channel.from, from_balance - channel.reserved_ct);
-        break;
-      }
-      
-      case "FLUX": {
-        const flux = event.proof.claim;
-        const channel = state.channels.get(flux.channel);
-        if (channel) {
-          channel.consumed_ct += flux.ct_delta;
-        }
-        break;
-      }
-      
-      case "CHANNEL_SETTLED": {
-        const settlement = event.proof.claim;
-        const channel = state.channels.get(settlement.channel);
-        if (channel) {
-          channel.state = "CLOSED";
-        }
-        // Distribute CT
-        for (const dist of settlement.distributions) {
-          const current = state.ct_balances.get(dist.substrate) ?? 0n;
-          state.ct_balances.set(dist.substrate, current + dist.ct_amount);
-        }
-        break;
+    if (isSubstrateEvent(event)) {
+      const s = event.proof.claim;
+      substrates.set(s.id, s);
+      ct_balances.set(s.id, s.ct_balance);
+    }
+    if (isChannelEvent(event)) channels.set(event.proof.claim.id, event.proof.claim);
+    if (isSessionEvent(event)) sessions.set(event.proof.claim.id, event.proof.claim);
+    if (isFluxEvent(event)) {
+      const ch = channels.get(event.proof.claim.channel);
+      if (ch) ch.consumed_ct += event.proof.claim.ct_delta;
+    }
+    if (isSettlementEvent(event)) {
+      const s = event.proof.claim;
+      const ch = channels.get(s.channel);
+      if (ch) ch.state = "CLOSED";
+      for (const d of s.distributions) {
+        ct_balances.set(d.substrate, (ct_balances.get(d.substrate) || 0n) + d.ct_amount);
       }
     }
   }
-  
-  return state;
+  return { substrates, channels, sessions, ct_balances };
 }
