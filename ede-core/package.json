@@ -1,0 +1,36 @@
+{
+  "name": "ede-core",
+  "version": "0.5.0",
+  "description": "EDE Protocol Core - Proof System Implementation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "ts-node tests/invariants.test.ts",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "ede",
+    "protocol",
+    "proof-system",
+    "cognitive-economy",
+    "identity",
+    "settlement"
+  ],
+  "author": "EDE Protocol Contributors",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edeprotocol/edeprotocol.git",
+    "directory": "ede-core"
+  }
+}
