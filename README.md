@@ -146,27 +146,53 @@ Append-only proof log. Every operation produces a verifiable proof.
 
 ---
 
-## Repository Structure
+## Repository Structure (EDE+)
 
 ```
 edeprotocol/
-├── README.md
-├── ROADMAP.md
-├── CONTRIBUTING.md
+├── conformance/               # Canonical JSON, signature profile, lint CLI, vectors
+│   ├── cli/ede-lint/          # TS CLI: validate, canonicalize, signature field checks
+│   ├── rules/                 # Conformance rules
+│   └── test_vectors/          # Valid / invalid examples (NIR, NIL, CSL, CT)
+├── resolver/                  # did:neuro resolver (FastAPI) + OpenAPI spec
+│   ├── server/
+│   └── spec/
+├── gateway/                   # Optional adapters (HTTP, MCP, Agent Protocol)
 ├── docs/
-│   ├── ede-core.md
-│   └── use_cases_2040.md
-├── schemas/          # JSON schemas (NIR, NIL, CSL, CT)
-├── ede-core/         # L0/L1 normative implementation
-│   ├── src/
-│   │   ├── types.ts
-│   │   ├── crypto.ts
-│   │   ├── operations.ts
-│   │   ├── verify.ts
-│   │   └── bridge/json.ts
-│   └── tests/
-└── ede-labs/         # L2 experimental (NOT normative)
+│   ├── standards/ieee/        # P2794 → CSL Evidence Pack, P2731 → EDE profile
+│   └── profiles/              # Tables and mappings
+├── schemas/                   # JSON Schemas (NIR/NIL/CSL/CT + IEEE/P2731 profiles)
+├── ede-core/                  # L0/L1 normative implementation
+├── ede-labs/                  # L2 experimental (NOT normative)
+├── README.md | ROADMAP.md | CONTRIBUTING.md
 ```
+
+### Conformance toolkit
+
+- **Schema validation**: `conformance/cli/ede-lint` uses AJV (Draft-07) to validate JSON artifacts against schemas under `schemas/`.
+- **Canonical hashing**: the CLI canonicalizes JSON, hashes it, and surfaces the digest for signing or verification.
+- **Signature profile enforcement**: verifies a `signature` object contains suite metadata (e.g., `PQ_DILITHIUM_3`) to keep signatures crypto-agile.
+
+Run from repo root:
+
+```bash
+cd conformance/cli/ede-lint
+npm install
+npm run build && node dist/index.js --schema ../../schemas/nil_intent_v2.schema.json --data sample.json
+```
+
+### did:neuro resolver
+
+Minimal FastAPI resolver that serves `did:neuro` documents and capability attestations:
+
+```bash
+cd resolver/server
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+OpenAPI for the resolver lives in `resolver/openapi.yaml`.
 
 ---
 
