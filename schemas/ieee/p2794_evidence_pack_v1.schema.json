@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.edeprotocol.org/ieee/p2794_evidence_pack_v1.schema.json",
+  "title": "P2794 Evidence Pack (EDE+ profile)",
+  "type": "object",
+  "required": [
+    "pack_id",
+    "study_meta",
+    "device_meta",
+    "session_refs",
+    "outcomes",
+    "data_availability",
+    "signatures"
+  ],
+  "properties": {
+    "pack_id": {
+      "type": "string",
+      "description": "Stable identifier for the evidence pack (URI or DID)."
+    },
+    "study_meta": {
+      "type": "object",
+      "required": ["species", "cohort", "protocol_refs"],
+      "properties": {
+        "species": { "type": "string" },
+        "cohort": { "type": "string", "description": "Cohort label or accession id." },
+        "protocol_refs": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri" },
+          "minItems": 1
+        },
+        "ethics": { "type": "string", "description": "IRB/IACUC or equivalent reference." },
+        "study_title": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "device_meta": {
+      "type": "object",
+      "required": ["interface_class", "channels", "placement"],
+      "properties": {
+        "interface_class": { "type": "string", "description": "Per P2794: e.g., invasive, noninvasive." },
+        "channels": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "placement": { "type": "string", "description": "Anatomical placement description." },
+        "sampling": {
+          "type": "object",
+          "properties": {
+            "rate_hz": { "type": "number", "minimum": 0 },
+            "resolution_bits": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "io_profile": { "type": "string", "description": "Reference to NIR/NIL profile used." }
+      },
+      "additionalProperties": false
+    },
+    "session_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["session_id", "content_hash"],
+        "properties": {
+          "session_id": { "type": "string" },
+          "content_hash": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+          "uri": { "type": "string", "format": "uri" }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["endpoint", "metric", "result"],
+        "properties": {
+          "endpoint": { "type": "string" },
+          "metric": { "type": "string" },
+          "result": { "type": ["number", "string"] },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "data_availability": {
+      "type": "object",
+      "required": ["location", "minimization"],
+      "properties": {
+        "location": { "type": "string", "description": "Where data can be accessed (URI, repository, or contact)." },
+        "minimization": { "type": "boolean", "description": "True if data is minimized or redacted." },
+        "constraints": { "type": "string", "description": "Access constraints or DUA references." }
+      },
+      "additionalProperties": false
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "signer", "suite", "signature"],
+        "properties": {
+          "role": { "type": "string", "description": "PI, lab, ethics, sponsor, etc." },
+          "signer": { "type": "string", "description": "DID or URN of the signer." },
+          "suite": { "type": "string", "description": "Signature suite identifier (see signature profile)." },
+          "signature": { "type": "string", "description": "Detached signature or JWS/COSE payload." }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false
+}

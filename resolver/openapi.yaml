@@ -1,0 +1,93 @@
+openapi: 3.0.3
+title: EDE+ did:neuro resolver
+version: 0.1.0
+paths:
+  /.well-known/did/neuro/{did}:
+    get:
+      summary: Resolve a did:neuro identifier to a signed NIR document
+      parameters:
+        - in: path
+          name: did
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Signed NIR document
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  did:
+                    type: string
+                  document:
+                    type: object
+                  attestations:
+                    type: array
+                    items:
+                      type: object
+        '404':
+          description: DID not found
+  /nir/register:
+    post:
+      summary: Register or update a did:neuro document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [did, document]
+              properties:
+                did:
+                  type: string
+                document:
+                  type: object
+                signatures:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: Registration accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  hash:
+                    type: string
+        '400':
+          description: Invalid payload
+  /nir/attest:
+    post:
+      summary: Attach an attestation to an existing did:neuro subject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [did, attestation]
+              properties:
+                did:
+                  type: string
+                attestation:
+                  type: object
+                signature:
+                  type: string
+      responses:
+        '200':
+          description: Attestation recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '404':
+          description: DID not found

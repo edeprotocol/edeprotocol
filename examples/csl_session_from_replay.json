@@ -1,0 +1,9 @@
+{
+  "$schema": "https://schema.edeprotocol.org/csl_session_v2.schema.json",
+  "session_id": "sess-1",
+  "version": "2.0",
+  "events": [
+    {"type": "nil.intent", "payload": {"action": "move", "confidence": 0.9}},
+    {"type": "nil.stream", "payload": {"stream_id": "stream-1"}}
+  ]
+}

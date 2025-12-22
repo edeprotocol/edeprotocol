@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.edeprotocol.org/profiles/ede_p2731_profile_v1.schema.json",
+  "title": "EDE P2731 profile object",
+  "type": "object",
+  "required": ["profile_id", "entity", "io_profile", "capabilities", "assurance"],
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "description": "Stable identifier (DID/URI) for the profile"
+    },
+    "entity": {
+      "type": "object",
+      "required": ["name", "class"],
+      "properties": {
+        "name": { "type": "string" },
+        "class": { "type": "string", "enum": ["H", "H+", "SO"] },
+        "manufacturer": { "type": "string" },
+        "version": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "io_profile": {
+      "type": "object",
+      "required": ["modality", "channels"],
+      "properties": {
+        "modality": { "type": "string", "description": "EEG/ECoG/EMG/etc." },
+        "channels": { "type": "integer", "minimum": 1 },
+        "sampling": {
+          "type": "object",
+          "properties": {
+            "rate_hz": { "type": "number", "minimum": 0 },
+            "resolution_bits": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "io_profile_ref": { "type": "string", "description": "Reference string reused in NIL payloads." }
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "object",
+      "required": ["signals", "commands"],
+      "properties": {
+        "signals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["opcode", "description"],
+            "properties": {
+              "opcode": { "type": "string" },
+              "description": { "type": "string" },
+              "latency_budget_ms": { "type": "number", "minimum": 0 },
+              "risk": { "type": "string", "enum": ["low", "medium", "high"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["opcode", "payload_schema"],
+            "properties": {
+              "opcode": { "type": "string" },
+              "payload_schema": { "type": "string", "format": "uri" },
+              "confirmation": { "type": "boolean", "description": "Requires operator confirmation" },
+              "latency_budget_ms": { "type": "number", "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "assurance": {
+      "type": "object",
+      "required": ["signature_suites", "liveness"],
+      "properties": {
+        "signature_suites": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "liveness": { "type": "string", "description": "Liveness/attestation expectations." },
+        "nal": { "type": "string", "description": "Neuro Attestation Layer reference." }
+      },
+      "additionalProperties": false
+    },
+    "outcomes": {
+      "type": "object",
+      "properties": {
+        "csl_binding": { "type": "string", "description": "How outcomes are logged into CSL events." },
+        "ct_quote_policy": { "type": "string", "description": "Quote policy for CT deltas." }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

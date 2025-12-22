@@ -1,0 +1,21 @@
+{
+  "name": "@edeprotocol/ede-lint",
+  "version": "0.1.0",
+  "description": "EDE+ conformance CLI (schema validation, canonical hash, signature profile checks)",
+  "bin": {
+    "ede-lint": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "canonicalize": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "typescript": "^5.5.4"
+  }
+}

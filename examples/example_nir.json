@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.edeprotocol.org/nir_v2.schema.json",
+  "version": "2.0",
+  "substrate_id": "did:ede:example",
+  "class": "H",
+  "crypto": {
+    "supported_suites": ["PQ_DILITHIUM_3"],
+    "default_suite": "PQ_DILITHIUM_3"
+  },
+  "io_profile": {
+    "inputs": ["eeg"],
+    "outputs": ["cursor"],
+    "latency_ms": 50
+  }
+}

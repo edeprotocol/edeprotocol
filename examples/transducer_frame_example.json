@@ -1,0 +1,11 @@
+{
+  "frame_id": "frame-001",
+  "timestamp": "2025-01-01T00:00:00Z",
+  "duration_ms": 20,
+  "channels": [
+    {"name": "C3", "sampling_rate_hz": 500, "samples": [0.1, 0.2, 0.15]},
+    {"name": "C4", "sampling_rate_hz": 500, "samples": [0.05, 0.12, 0.1]}
+  ],
+  "signal_quality": {"confidence": 0.9, "noise_floor_db": -60, "artifacts": []},
+  "provenance": {"device_id": "eeg-device-1", "subject_id": "subj-1", "session_id": "sess-1"}
+}

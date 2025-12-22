@@ -1,0 +1,46 @@
+name: EDE+ Conformance
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate schemas with ajv-cli
+        run: |
+          npm install -g ajv-cli@5.0.0
+          ajv validate -s schemas/ieee/p2794_evidence_pack_v1.schema.json -d schemas/ieee/p2794_evidence_pack_v1.schema.json
+          ajv validate -s schemas/profiles/ede_p2731_profile_v1.schema.json -d schemas/profiles/ede_p2731_profile_v1.schema.json
+
+      - name: Build ede-lint CLI
+        working-directory: conformance/cli/ede-lint
+        run: |
+          npm install
+          npm run build
+
+      - name: Smoke test ede-lint against profile schema
+        working-directory: conformance/cli/ede-lint
+        run: |
+          echo '{"profile_id":"did:neuro:demo","entity":{"name":"demo","class":"H"},"io_profile":{"modality":"EEG","channels":8},"capabilities":{"signals":[{"opcode":"signal.demo","description":"demo"}],"commands":[]},"assurance":{"signature_suites":["PQ_DILITHIUM_3"],"liveness":"none"},"signatures":[{"suite":"PQ_DILITHIUM_3","signature":"deadbeef"}]}' > /tmp/profile.json
+          node dist/index.js ../../schemas/profiles/ede_p2731_profile_v1.schema.json /tmp/profile.json
+
+      - name: FastAPI resolver type check
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install resolver deps
+        run: |
+          pip install -r resolver/server/requirements.txt
+      - name: Run resolver unit smoke
+        run: |
+          python - <<'PY'
+from resolver.server.main import canonical_hash
+
+example = {"hello": "world", "answer": 42}
+print(canonical_hash(example))
+PY
