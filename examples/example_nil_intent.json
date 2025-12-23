@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.edeprotocol.org/nil_intent_v2.schema.json",
+  "version": "2.0",
+  "intent": "cursor_move",
+  "payload": {
+    "x": 0.1,
+    "y": -0.1
+  },
+  "risk": {
+    "confidence": 0.9
+  },
+  "timestamp": "2025-01-01T00:00:00Z"
+}

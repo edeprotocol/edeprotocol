@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schema.edeprotocol.org/nil_stream_v1.schema.json",
+  "stream_id": "stream-1",
+  "version": "1.0",
+  "provenance": {"device_id": "eeg-device-1", "subject_id": "subj-1", "session_id": "sess-1"},
+  "channels": [
+    {"name": "C3", "confidence": 0.9, "sampling_rate_hz": 500, "payload": [0.1,0.2,0.15]},
+    {"name": "C4", "confidence": 0.85, "sampling_rate_hz": 500, "payload": [0.05,0.12,0.1]}
+  ]
+}

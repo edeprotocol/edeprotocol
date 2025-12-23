@@ -1,0 +1,21 @@
+version: '3.9'
+services:
+  resolver:
+    build: ./resolver/server
+    ports:
+      - "8000:8000"
+    environment:
+      - RESOLVER_DB=/data/resolver.db
+    volumes:
+      - resolver-data:/data
+  gateway:
+    build: ./gateway/http/server
+    ports:
+      - "9000:9000"
+    environment:
+      - GATEWAY_DB=/data/gateway.db
+    volumes:
+      - gateway-data:/data
+volumes:
+  resolver-data:
+  gateway-data:
