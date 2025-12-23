@@ -1,15 +1,10 @@
-import hashlib
-import json
-import os
-import sqlite3
-from pathlib import Path
-from typing import Dict, List, Optional
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from typing import Dict, List, Optional
+import hashlib
+import json
 
-BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = Path(os.environ.get("RESOLVER_DB", BASE_DIR / "resolver.db"))
+app = FastAPI(title="EDE+ did:neuro resolver", version="0.1.0")
 
 
 class Signature(BaseModel):
@@ -134,7 +129,36 @@ def health():
 def version():
     git_sha = os.environ.get("GIT_SHA", "unknown")
     return {"name": "ede-resolver", "version": app.version, "git_sha": git_sha}
+class Registry:
+    def __init__(self) -> None:
+        self.documents: Dict[str, Dict] = {}
+        self.signatures: Dict[str, List[Dict]] = {}
+        self.attestations: Dict[str, List[Dict]] = {}
 
+    def register(self, did: str, document: Dict, signatures: List[Signature]) -> str:
+        self.documents[did] = document
+        self.signatures[did] = [s.model_dump() for s in signatures]
+        content_hash = canonical_hash(document)
+        return content_hash
+
+    def add_attestation(self, did: str, attestation: Dict, signature: Optional[str]) -> None:
+        if did not in self.documents:
+            raise KeyError("did_not_found")
+        entry = {"attestation": attestation, "signature": signature}
+        self.attestations.setdefault(did, []).append(entry)
+
+    def resolve(self, did: str) -> Dict:
+        if did not in self.documents:
+            raise KeyError("did_not_found")
+        return {
+            "did": did,
+            "document": self.documents[did],
+            "signatures": self.signatures.get(did, []),
+            "attestations": self.attestations.get(did, []),
+        }
+
+
+registry = Registry()
 
 @app.get("/.well-known/did/neuro/{did}")
 def resolve_did(did: str):
@@ -144,15 +168,10 @@ def resolve_did(did: str):
         raise HTTPException(status_code=404, detail="did not found")
 
 
-@app.post("/register")
+@app.post("/nir/register")
 def register(req: RegisterRequest):
     content_hash = registry.register(req.did, req.document, req.signatures)
     return {"status": "ok", "hash": content_hash}
-
-
-@app.post("/nir/register")
-def register_legacy(req: RegisterRequest):
-    return register(req)
 
 
 @app.post("/nir/attest")
@@ -164,7 +183,6 @@ def attest(req: AttestationRequest):
     return {"status": "ok"}
 
 
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+@app.get("/")
+def health():
+    return {"status": "ready", "dids": len(registry.documents)}
